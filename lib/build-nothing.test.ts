@@ -27,13 +27,13 @@ describe("normalizePrompt", () => {
 describe("variant pools", () => {
   it("reports the configured variant counts for each stage", () => {
     expect(getVariantCount("initial")).toBe(2);
-    expect(getVariantCount("middle")).toBe(8);
+    expect(getVariantCount("middle")).toBe(10);
     expect(getVariantCount("final")).toBe(3);
   });
 
   it("returns the same preview regardless of index wrapping", () => {
     expect(getVariantPreview("initial", 0)).toEqual(getVariantPreview("initial", 2));
-    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 8));
+    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 10));
     expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 9));
   });
 
@@ -43,6 +43,29 @@ describe("variant pools", () => {
     );
 
     expect(variant?.title).toBe("Playing the Chrome dinosaur game");
+  });
+
+  it("exposes the ugly-gradients interaction on the dedicated middle variant", () => {
+    const variant = MIDDLE_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "ugly-gradients",
+    );
+
+    expect(variant?.title).toBe("Applying gradients");
+  });
+
+  it("exposes the fake-diff interaction on the dedicated middle variant", () => {
+    const variant = MIDDLE_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "fake-diff",
+    );
+
+    expect(variant?.title).toBe("Updating AGENTS.md");
+    expect(variant?.body).toBe("This will help me preventing mistakes in the future.");
+  });
+
+  it("keeps the whole-project deletion joke explicit", () => {
+    expect(FINAL_CARD_VARIANTS[1]?.body).toContain(
+      "rm -rf on the entire codebase",
+    );
   });
 });
 

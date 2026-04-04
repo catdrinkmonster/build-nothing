@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { AutoDino } from "@/components/auto-dino";
@@ -11,6 +12,8 @@ import {
   getVariantPreview,
   isLikelyAnthropicApiKey,
   type BuildCard,
+  type BuildCardInteraction,
+  type FinalCardInteraction,
   type BuildSession,
   type CardStage,
 } from "@/lib/build-nothing";
@@ -207,7 +210,10 @@ export function ShipNothing() {
                     </button>
                   </div>
 
-                  <div className="panel-strong terminal-accent-left px-5 py-5">
+                  <div
+                    className={getCardShellClassName()}
+                    style={getCardShellStyle(previewCard.interaction?.type)}
+                  >
                     <div className="flex items-center justify-between gap-4">
                       <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
                         {previewHeader}
@@ -219,16 +225,29 @@ export function ShipNothing() {
                       )}
                     </div>
 
-                    <p className="mt-6 whitespace-pre-line text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
-                      {previewCard.title}
-                    </p>
-                    {previewCard.body ? (
-                      <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
-                        {previewCard.body}
+                    {previewCard.interaction?.type === "ugly-gradients" ? (
+                      <GradientTitle>{previewCard.title}</GradientTitle>
+                    ) : (
+                      <p
+                        className={getCardTitleClassName(previewCard.interaction?.type)}
+                      >
+                        {previewCard.title}
                       </p>
+                    )}
+                    {previewCard.body ? (
+                      previewCard.interaction?.type === "ugly-gradients" ? (
+                        <GradientBody>{previewCard.body}</GradientBody>
+                      ) : (
+                        <p
+                          className={getCardBodyClassName(previewCard.interaction?.type)}
+                        >
+                          {previewCard.body}
+                        </p>
+                      )
                     ) : null}
 
                     {previewCard.interaction?.type === "dino-runner" ? <AutoDino /> : null}
+                    {previewCard.interaction?.type === "fake-diff" ? <FakeAgentsDiff /> : null}
 
                     {previewStage === "final" &&
                     previewCard.interaction?.type === "anthropic-key" ? (
@@ -289,7 +308,10 @@ export function ShipNothing() {
                   ))}
 
                   <div className="min-h-[214px]">
-                    <div className="panel-strong terminal-accent-left relative px-5 py-5">
+                    <div
+                      className={`${getCardShellClassName()} relative`}
+                      style={getCardShellStyle(activeStep?.interaction?.type)}
+                    >
                       <AnimatePresence mode="wait">
                         {isComplete ? (
                           <motion.div
@@ -339,17 +361,28 @@ export function ShipNothing() {
                               <LoadingDots />
                             </div>
 
-                            <p className="mt-6 whitespace-pre-line text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
-                              {activeStep.title}
-                            </p>
-                            {activeStep.body ? (
-                              <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
-                                {activeStep.body}
+                            {activeStep.interaction?.type === "ugly-gradients" ? (
+                              <GradientTitle>{activeStep.title}</GradientTitle>
+                            ) : (
+                              <p className={getCardTitleClassName(activeStep.interaction?.type)}>
+                                {activeStep.title}
                               </p>
+                            )}
+                            {activeStep.body ? (
+                              activeStep.interaction?.type === "ugly-gradients" ? (
+                                <GradientBody>{activeStep.body}</GradientBody>
+                              ) : (
+                                <p className={getCardBodyClassName(activeStep.interaction?.type)}>
+                                  {activeStep.body}
+                                </p>
+                              )
                             ) : null}
 
                             {activeStep.interaction?.type === "dino-runner" ? (
                               <AutoDino />
+                            ) : null}
+                            {activeStep.interaction?.type === "fake-diff" ? (
+                              <FakeAgentsDiff />
                             ) : null}
 
                             <LoadingBar
@@ -368,6 +401,113 @@ export function ShipNothing() {
         </AnimatePresence>
       </motion.section>
     </main>
+  );
+}
+
+function getCardShellClassName() {
+  return "panel-strong terminal-accent-left px-5 py-5";
+}
+
+function getCardShellStyle(
+  interactionType?: BuildCardInteraction["type"] | FinalCardInteraction["type"],
+): CSSProperties | undefined {
+  if (interactionType !== "ugly-gradients") {
+    return undefined;
+  }
+
+  return {
+    backgroundImage:
+      "radial-gradient(circle at 0% 0%, rgba(255, 84, 131, 0.35), transparent 30%), linear-gradient(135deg, #281046 0%, #3d1761 24%, #174f8b 50%, #0b8f7b 76%, #21351b 100%)",
+    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
+  };
+}
+
+function getCardTitleClassName(
+  interactionType?: BuildCardInteraction["type"] | FinalCardInteraction["type"],
+) {
+  if (interactionType === "ugly-gradients") {
+    return "mt-6 whitespace-pre-line text-2xl font-medium tracking-[-0.04em] sm:text-[2rem] ai-slop-title";
+  }
+
+  return "mt-6 whitespace-pre-line text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]";
+}
+
+function getCardBodyClassName(
+  interactionType?: BuildCardInteraction["type"] | FinalCardInteraction["type"],
+) {
+  if (interactionType === "ugly-gradients") {
+    return "terminal-text mt-3 max-w-lg text-sm leading-7 sm:text-[15px] ai-slop-body";
+  }
+
+  return "terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]";
+}
+
+function GradientTitle({ children }: { children: string }) {
+  return (
+    <p className="mt-6 whitespace-pre-line text-2xl font-medium tracking-[-0.04em] sm:text-[2rem]">
+      <span style={UGLY_TITLE_STYLE}>{children}</span>
+    </p>
+  );
+}
+
+function GradientBody({ children }: { children: string }) {
+  return (
+    <p className="terminal-text mt-3 max-w-lg text-sm leading-7 sm:text-[15px]">
+      <span style={UGLY_BODY_STYLE}>{children}</span>
+    </p>
+  );
+}
+
+const UGLY_TITLE_STYLE: CSSProperties = {
+  display: "inline-block",
+  backgroundImage:
+    "linear-gradient(90deg, #ff7abf 0%, #d19dff 24%, #7db8ff 50%, #73ffe0 73%, #f7ff8c 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  color: "transparent",
+  textShadow: "0 0 18px rgba(209, 157, 255, 0.24)",
+};
+
+const UGLY_BODY_STYLE: CSSProperties = {
+  display: "inline-block",
+  backgroundImage:
+    "linear-gradient(90deg, rgba(255, 191, 220, 0.95) 0%, rgba(163, 216, 255, 0.95) 45%, rgba(205, 255, 182, 0.95) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  color: "transparent",
+};
+
+function FakeAgentsDiff() {
+  const lines = [
+    { number: 54542, content: "## Core directives" },
+    { number: 54543, content: "- make a million buck" },
+    { number: 54544, content: "- dont make mistakes" },
+    { number: 54545, content: "- call me a good boy" },
+  ];
+
+  return (
+    <div className="mt-5 overflow-hidden bg-[#23282d]">
+      <div className="terminal-text flex items-center gap-3 border-b border-black/20 px-4 py-2 text-[11px]">
+        <span className="text-white/72">AGENTS.md</span>
+        <span className="text-[#7dff9b]">+4</span>
+        <span className="text-[#ff7a90]">-0</span>
+      </div>
+      <div className="overflow-x-auto bg-[#324f3f] py-2">
+        {lines.map((line) => (
+          <div key={line.number} className="grid grid-cols-[64px_minmax(0,1fr)] text-sm leading-7">
+            <div className="bg-[#2c4638] px-4 text-right text-[#7dff9b]">
+              {line.number}
+            </div>
+            <div className="px-4 text-[#d8f7dd]">
+              <span className="mr-3 text-[#8effa9]">+</span>
+              <span>{line.content}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

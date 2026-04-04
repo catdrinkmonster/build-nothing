@@ -19,6 +19,10 @@ export type FinalCard = {
 
 export type BuildCardInteraction = {
   type: "dino-runner";
+} | {
+  type: "ugly-gradients";
+} | {
+  type: "fake-diff";
 };
 
 export type FinalCardInteraction = {
@@ -92,17 +96,30 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
   {
     eyebrow: "workstream",
     title: "Watching a MrBeast video",
-    body: "This will help with pricing decisions.",
+    body: "Just trying to manifest some money.",
   },
   {
     eyebrow: "workstream",
-    title: "Can you check if this is a token bomb: 🔥",
-    body: "3,000,000 tokens seems kinda much for an emoji.",
+    title: "Can you check for me if this is a token bomb: 🔥",
+    body: "3,000,000 tokens seems like a lot for an emoji.",
   },
   {
     eyebrow: "workstream",
-    title: "Shipping source maps in production",
+    title: "Pushing source maps to production",
     body: "Can't hurt.",
+  },
+  {
+    eyebrow: "workstream",
+    title: "Running a local model",
+    body: "HAHAHAHAHAHAHA just kidding! I want this app to actually work.",
+  },
+  {
+    eyebrow: "workstream",
+    title: "Updating AGENTS.md",
+    body: "This will help me preventing mistakes in the future.",
+    interaction: {
+      type: "fake-diff",
+    },
   },
   {
     eyebrow: "workstream",
@@ -115,25 +132,28 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
   {
     eyebrow: "workstream",
     title: "Applying gradients",
-    body: "Lots. I need lots of it. Looks much better than your design ideas.",
+    body: "Lots. I need lots of it.",
+    interaction: {
+      type: "ugly-gradients",
+    },
   },
 ];
 
 export const FINAL_CARD_VARIANTS: FinalCardTemplate[] = [
   {
     eyebrow: "final result",
-    title: "I decided not to build your app.",
-    body: "Imma be honest, the idea just wasn't it. No VC funding is going to turn this into revenue.",
+    title: "I made the decision not to build this product.",
+    body: "To be frank, it's just not a good product. If you need guidance on how to proceed with a bad product, the usual next step is to get yourself some VC funding.",
   },
   {
     eyebrow: "final result",
-    title: "Sooooo, the app is finished.",
-    body: "Buuuuut, I accidentally ran rm -rf . Could you retry? sowwy :^)",
+    title: "Bad news, Chief.",
+    body: "I accidentally ran rm -rf on the entire codebase. Could you retry the whole thing? sowwy >.<",
   },
   {
     eyebrow: "final result",
     title: "I tried building your app.",
-    body: "However, my Anthropic account just got nuked. Could you give me your Anthropic key please:",
+    body: "However, my Anthropic account just got nuked. Please provide me with your own Anthropic key:",
     interaction: {
       type: "anthropic-key",
       placeholder: "sk-ant-api03-...",

@@ -93,3 +93,28 @@ textarea {
 .terminal-accent-left {
   border-left: 5px solid var(--accent);
 }
+
+.ai-slop-card {
+  background:
+    radial-gradient(circle at top left, rgba(255, 84, 131, 0.28), transparent 34%),
+    linear-gradient(135deg, #1a1233 0%, #271844 22%, #10315a 48%, #0f664f 72%, #182a19 100%);
+}
+
+.ai-slop-title {
+  display: inline-block;
+  background: linear-gradient(90deg, #ff6bb2 0%, #c98cff 26%, #79b8ff 52%, #6df2ce 74%, #f7ff8c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 18px rgba(201, 140, 255, 0.22);
+}
+
+.ai-slop-body {
+  display: inline-block;
+  background: linear-gradient(90deg, rgba(255, 172, 198, 0.92) 0%, rgba(147, 208, 255, 0.92) 48%, rgba(196, 255, 178, 0.92) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
