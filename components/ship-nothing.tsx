@@ -27,7 +27,6 @@ export function ShipNothing() {
   const [historyCount, setHistoryCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [previewStage, setPreviewStage] = useState<CardStage>("initial");
-  const [previewIndex, setPreviewIndex] = useState(0);
 
   const devMode = process.env.NODE_ENV === "development";
   const activePrompt = useMemo(() => draft.trim() || DEFAULT_IDEA, [draft]);
@@ -39,13 +38,16 @@ export function ShipNothing() {
   const completedSteps = sequence.slice(0, historyCount);
   const activeStep = sequence[activeStepIndex] ?? null;
   const previewCount = getVariantCount(previewStage);
-  const previewCard = devMode ? getVariantPreview(previewStage, previewIndex) : null;
-  const activeHeader = getActiveHeader(activeStepIndex, sequence.length);
-  const previewHeader = getPreviewHeader(
-    previewStage,
-    previewIndex,
-    getVariantCount("middle"),
+  const previewCards = useMemo(
+    () =>
+      devMode
+        ? Array.from({ length: previewCount }, (_, index) =>
+            getVariantPreview(previewStage, index),
+          )
+        : [],
+    [devMode, previewCount, previewStage],
   );
+  const activeHeader = getActiveHeader(activeStepIndex, sequence.length);
   const finalInteraction = isComplete ? session?.finalCard.interaction : undefined;
 
   useEffect(() => {
@@ -104,13 +106,8 @@ export function ShipNothing() {
     handleSubmit();
   }
 
-  function changePreviewIndex(direction: number) {
-    setPreviewIndex((current) => (current + direction + previewCount) % previewCount);
-  }
-
   function handlePreviewStageChange(stage: CardStage) {
     setPreviewStage(stage);
-    setPreviewIndex(0);
   }
 
   return (
@@ -175,7 +172,7 @@ export function ShipNothing() {
                 </div>
               </div>
 
-              {devMode && previewCard ? (
+              {devMode && previewCards.length > 0 ? (
                 <div className="mt-5 space-y-3">
                   <div className="flex flex-wrap items-center gap-2 px-1">
                     <span className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
@@ -191,80 +188,73 @@ export function ShipNothing() {
                         {stage}
                       </button>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => changePreviewIndex(-1)}
-                      className="terminal-text bg-[var(--panel-soft)] px-2 py-1 text-[11px] text-white/66"
-                    >
-                      prev
-                    </button>
                     <span className="terminal-text text-[11px] text-white/38">
-                      {previewIndex + 1}/{previewCount}
+                      {previewCount} variants
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => changePreviewIndex(1)}
-                      className="terminal-text bg-[var(--panel-soft)] px-2 py-1 text-[11px] text-white/66"
-                    >
-                      next
-                    </button>
                   </div>
 
-                  <div
-                    className={getCardShellClassName()}
-                    style={getCardShellStyle(previewCard.interaction?.type)}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
-                        {previewHeader}
-                      </p>
-                      {previewStage === "final" ? (
-                        <div className="h-2 w-2 bg-[var(--accent)]" />
-                      ) : (
-                        <LoadingDots />
-                      )}
-                    </div>
-
-                    {previewCard.interaction?.type === "ugly-gradients" ? (
-                      <GradientTitle>{previewCard.title}</GradientTitle>
-                    ) : (
-                      <p
-                        className={getCardTitleClassName(previewCard.interaction?.type)}
+                  <div className="space-y-3">
+                    {previewCards.map((previewCard, index) => (
+                      <div
+                        key={`${previewStage}-${previewCard.id}`}
+                        className={getCardShellClassName()}
+                        style={getCardShellStyle(previewCard.interaction?.type)}
                       >
-                        {previewCard.title}
-                      </p>
-                    )}
-                    {previewCard.body ? (
-                      previewCard.interaction?.type === "ugly-gradients" ? (
-                        <GradientBody>{previewCard.body}</GradientBody>
-                      ) : (
-                        <p
-                          className={getCardBodyClassName(previewCard.interaction?.type)}
-                        >
-                          {previewCard.body}
-                        </p>
-                      )
-                    ) : null}
+                        <div className="flex items-center justify-between gap-4">
+                          <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
+                            {getPreviewHeader(previewStage, index, getVariantCount("middle"))}
+                          </p>
+                          {previewStage === "final" ? (
+                            <div className="h-2 w-2 bg-[var(--accent)]" />
+                          ) : (
+                            <LoadingDots />
+                          )}
+                        </div>
 
-                    {previewCard.interaction?.type === "dino-runner" ? <AutoDino /> : null}
-                    {previewCard.interaction?.type === "fake-diff" ? <FakeAgentsDiff /> : null}
+                        {previewCard.interaction?.type === "ugly-gradients" ? (
+                          <GradientTitle>{previewCard.title}</GradientTitle>
+                        ) : (
+                          <p
+                            className={getCardTitleClassName(previewCard.interaction?.type)}
+                          >
+                            {previewCard.title}
+                          </p>
+                        )}
+                        {previewCard.body ? (
+                          previewCard.interaction?.type === "ugly-gradients" ? (
+                            <GradientBody>{previewCard.body}</GradientBody>
+                          ) : (
+                            <p
+                              className={getCardBodyClassName(previewCard.interaction?.type)}
+                            >
+                              {previewCard.body}
+                            </p>
+                          )
+                        ) : null}
 
-                    {previewStage === "final" &&
-                    previewCard.interaction?.type === "anthropic-key" ? (
-                      <AnthropicKeyTrap
-                        key={`preview-trap-${previewIndex}`}
-                        placeholder={previewCard.interaction.placeholder}
-                        invalidMessage={previewCard.interaction.invalidMessage}
-                        successMessage={previewCard.interaction.successMessage}
-                      />
-                    ) : null}
+                        {previewCard.interaction?.type === "dino-runner" ? <AutoDino /> : null}
+                        {previewCard.interaction?.type === "fake-diff" ? (
+                          <FakeAgentsDiff />
+                        ) : null}
 
-                    {previewStage === "final" ? null : (
-                      <LoadingBar
-                        loadingKey={`preview-${previewStage}-${previewIndex}`}
-                        duration={1.8}
-                      />
-                    )}
+                        {previewStage === "final" &&
+                        previewCard.interaction?.type === "anthropic-key" ? (
+                          <AnthropicKeyTrap
+                            key={`preview-trap-${previewCard.id}`}
+                            placeholder={previewCard.interaction.placeholder}
+                            invalidMessage={previewCard.interaction.invalidMessage}
+                            successMessage={previewCard.interaction.successMessage}
+                          />
+                        ) : null}
+
+                        {previewStage === "final" ? null : (
+                          <LoadingBar
+                            loadingKey={`preview-${previewStage}-${previewCard.id}`}
+                            duration={1.8}
+                          />
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : null}

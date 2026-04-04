@@ -23,6 +23,8 @@ export type BuildCardInteraction = {
   type: "ugly-gradients";
 } | {
   type: "fake-diff";
+} | {
+  type: "tenor-embed";
 };
 
 export type FinalCardInteraction = {
@@ -72,6 +74,9 @@ export const INITIAL_CARD_VARIANTS: CardTemplate[] = [
     eyebrow: "initial review",
     title: "Planning the project in unnecessary detail",
     body: "This might take 6 or 7 minutes.",
+    interaction: {
+      type: "tenor-embed",
+    },
   },
 ];
 
