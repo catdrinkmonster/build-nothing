@@ -37,6 +37,14 @@ describe("variant pools", () => {
     expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 9));
   });
 
+  it("exposes the tenor embed interaction on the planning initial variant", () => {
+    const variant = INITIAL_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "tenor-embed",
+    );
+
+    expect(variant?.title).toBe("Planning the project in unnecessary detail");
+  });
+
   it("exposes the dino-runner interaction on the dedicated middle variant", () => {
     const variant = MIDDLE_CARD_VARIANTS.find(
       (card) => card.interaction?.type === "dino-runner",

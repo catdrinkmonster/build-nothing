@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { AutoDino } from "@/components/auto-dino";
+import { TenorEmbed } from "@/components/tenor-embed";
 import {
   DEFAULT_IDEA,
   createBuildSession,
@@ -236,6 +237,9 @@ export function ShipNothing() {
                         {previewCard.interaction?.type === "fake-diff" ? (
                           <FakeAgentsDiff />
                         ) : null}
+                        {previewCard.interaction?.type === "tenor-embed" ? (
+                          <TenorEmbed />
+                        ) : null}
 
                         {previewStage === "final" &&
                         previewCard.interaction?.type === "anthropic-key" ? (
@@ -373,6 +377,9 @@ export function ShipNothing() {
                             ) : null}
                             {activeStep.interaction?.type === "fake-diff" ? (
                               <FakeAgentsDiff />
+                            ) : null}
+                            {activeStep.interaction?.type === "tenor-embed" ? (
+                              <TenorEmbed />
                             ) : null}
 
                             <LoadingBar
