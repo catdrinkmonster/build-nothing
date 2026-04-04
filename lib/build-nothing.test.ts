@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_IDEA,
+  FINAL_CARD_VARIANTS,
   INITIAL_CARD_VARIANTS,
   MIDDLE_CARD_VARIANTS,
-  FINAL_CARD_VARIANTS,
   createBuildSession,
   getVariantCount,
   getVariantPreview,
+  isLikelyAnthropicApiKey,
   normalizePrompt,
 } from "./build-nothing";
 
@@ -24,17 +25,27 @@ describe("normalizePrompt", () => {
 });
 
 describe("variant pools", () => {
-  it("reports the correct variant counts", () => {
-    expect(getVariantCount("initial")).toBe(INITIAL_CARD_VARIANTS.length);
-    expect(getVariantCount("middle")).toBe(MIDDLE_CARD_VARIANTS.length);
-    expect(getVariantCount("final")).toBe(FINAL_CARD_VARIANTS.length);
+  it("reports the configured variant counts for each stage", () => {
+    expect(getVariantCount("initial")).toBe(2);
+    expect(getVariantCount("middle")).toBe(7);
+    expect(getVariantCount("final")).toBe(3);
   });
 
-  it("returns stable wrapped previews for any index", () => {
-    const wrapped = getVariantPreview("middle", MIDDLE_CARD_VARIANTS.length + 2);
-    const direct = getVariantPreview("middle", 2);
+  it("returns the same preview regardless of index wrapping", () => {
+    expect(getVariantPreview("initial", 0)).toEqual(getVariantPreview("initial", 2));
+    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 7));
+    expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 9));
+  });
+});
 
-    expect(wrapped).toEqual(direct);
+describe("isLikelyAnthropicApiKey", () => {
+  it("accepts the expected anthropic-style prefix", () => {
+    expect(isLikelyAnthropicApiKey("sk-ant-api03-1234567890abcdef")).toBe(true);
+  });
+
+  it("rejects unrelated or too-short values", () => {
+    expect(isLikelyAnthropicApiKey("sk-test-123")).toBe(false);
+    expect(isLikelyAnthropicApiKey("🔥")).toBe(false);
   });
 });
 
@@ -46,15 +57,42 @@ describe("createBuildSession", () => {
     expect(first).toEqual(second);
   });
 
-  it("generates one initial card, three unique middle cards, and one final card", () => {
+  it("uses prompt-stable initial and final variants while varying middle count and durations", () => {
     const session = createBuildSession("dog-friendly dating app");
+    const restrictedTitles = new Set(["Skipping this step", "Redoing the last step"]);
 
-    expect(session.initialCard.durationMs).toBeGreaterThanOrEqual(710);
-    expect(session.middleCards).toHaveLength(3);
-    expect(new Set(session.middleCards.map((card) => card.id)).size).toBe(3);
-    expect(session.middleCards.every((card) => card.durationMs >= 710)).toBe(true);
-    expect(session.finalCard.title.length).toBeGreaterThan(20);
-    expect(session.finalCard.body.length).toBeGreaterThan(20);
+    expect(
+      INITIAL_CARD_VARIANTS.some((variant) => variant.title === session.initialCard.title),
+    ).toBe(true);
+    expect(
+      INITIAL_CARD_VARIANTS.some((variant) => variant.body === session.initialCard.body),
+    ).toBe(true);
+    expect(session.initialCard.durationMs).toBeGreaterThanOrEqual(5000);
+    expect(session.initialCard.durationMs).toBeLessThanOrEqual(10000);
+
+    expect(session.middleCards.length).toBeGreaterThanOrEqual(3);
+    expect(session.middleCards.length).toBeLessThanOrEqual(5);
+    expect(new Set(session.middleCards.map((card) => card.title)).size).toBe(
+      session.middleCards.length,
+    );
+    expect(
+      session.middleCards.every((card) =>
+        MIDDLE_CARD_VARIANTS.some((variant) => variant.title === card.title),
+      ),
+    ).toBe(true);
+    expect(
+      session.middleCards.every(
+        (card) => card.durationMs >= 5000 && card.durationMs <= 10000,
+      ),
+    ).toBe(true);
+    expect(
+      session.middleCards.slice(0, 2).every((card) => !restrictedTitles.has(card.title)),
+    ).toBe(true);
+
+    expect(
+      FINAL_CARD_VARIANTS.some((variant) => variant.title === session.finalCard.title),
+    ).toBe(true);
+    expect(session.finalCard.body?.length ?? 0).toBeGreaterThan(20);
   });
 
   it("does not echo the raw prompt in generated copy", () => {
@@ -72,7 +110,9 @@ describe("createBuildSession", () => {
         card.title,
         card.body,
       ]),
-    ].join(" ");
+    ]
+      .filter((part): part is string => Boolean(part))
+      .join(" ");
 
     expect(combined).not.toContain("DROP TABLE users");
     expect(combined).not.toContain("build me god");

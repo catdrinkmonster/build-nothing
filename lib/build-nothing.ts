@@ -4,7 +4,7 @@ export type BuildCard = {
   id: string;
   eyebrow: string;
   title: string;
-  body: string;
+  body?: string;
   durationMs: number;
 };
 
@@ -12,7 +12,8 @@ export type FinalCard = {
   id: string;
   eyebrow: string;
   title: string;
-  body: string;
+  body?: string;
+  interaction?: FinalCardInteraction;
 };
 
 export type BuildSession = {
@@ -25,10 +26,25 @@ export type BuildSession = {
 type CardTemplate = {
   eyebrow: string;
   title: string;
-  body: string;
+  body?: string;
+  minPosition?: number;
 };
 
-const MIDDLE_CARD_COUNT = 3;
+type FinalCardTemplate = CardTemplate & {
+  interaction?: FinalCardInteraction;
+};
+
+export type FinalCardInteraction = {
+  type: "anthropic-key";
+  placeholder: string;
+  invalidMessage: string;
+  successMessage: string;
+};
+
+const MIN_MIDDLE_CARD_COUNT = 3;
+const MAX_MIDDLE_CARD_COUNT = 5;
+const MIN_CARD_DURATION_MS = 5000;
+const MAX_CARD_DURATION_MS = 10000;
 
 export const DEFAULT_IDEA =
   "an ai startup for people too busy to have a personality";
@@ -36,89 +52,77 @@ export const DEFAULT_IDEA =
 export const INITIAL_CARD_VARIANTS: CardTemplate[] = [
   {
     eyebrow: "initial review",
-    title: "Reading the room",
-    body: "Starting with a measured pause and a professional amount of doubt.",
+    title: "Asking Claude how to vibecode an app",
+    body: "Nevermind. I accidentally said 'hello', so I hit my limits. Asking ChatGPT instead.",
   },
   {
     eyebrow: "initial review",
-    title: "Opening the brief",
-    body: "Looking over the idea like this will require emotional labor.",
-  },
-  {
-    eyebrow: "initial review",
-    title: "First pass",
-    body: "Applying immediate skepticism before any fake momentum begins.",
-  },
-  {
-    eyebrow: "initial review",
-    title: "Sizing it up",
-    body: "Giving the concept one respectful glance before the avoidance cycle starts.",
+    title: "Planning the project in unnecessary detail",
+    body: "This might take 6 or 7 minutes.",
   },
 ];
 
 export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
   {
     eyebrow: "workstream",
-    title: "Competitive analysis",
-    body: "Watching unrelated product demos and pretending this counts as research.",
+    title: "Taking a smoke break.",
+    body: "I'm European, so this is normal. VAT tax will be added to this action.",
   },
   {
     eyebrow: "workstream",
-    title: "Technical planning",
-    body: "Opening a blank editor, typing nothing, and calling it architecture.",
+    title: "Skipping this step",
+    body: "This will likely hurt the final product, but I am willing to take that risk at your expense.",
+    minPosition: 2,
   },
   {
     eyebrow: "workstream",
-    title: "Risk assessment",
-    body: "Concluding the main deliverable would mostly be future maintenance.",
+    title: "Redoing the last step",
+    body: "I lowkey forgor.",
+    minPosition: 2,
   },
   {
     eyebrow: "workstream",
-    title: "Momentum check",
-    body: "Mistaking a convincing interface for meaningful progress.",
+    title: "Watching a MrBeast video",
+    body: "This will help with pricing decisions.",
   },
   {
     eyebrow: "workstream",
-    title: "Design review",
-    body: "Adjusting spacing mentally and never committing the changes.",
+    title: "Can you check if this is a token bomb: 🔥",
+    body: "3,000,000 tokens seems kinda much for an emoji.",
   },
   {
     eyebrow: "workstream",
-    title: "Energy management",
-    body: "Standing up once and counting that as a productivity system.",
+    title: "Shipping source maps in production",
+    body: "Can't hurt.",
   },
   {
     eyebrow: "workstream",
-    title: "Scope control",
-    body: "Reducing ambition until the concept becomes spiritually optional.",
-  },
-  {
-    eyebrow: "workstream",
-    title: "Stakeholder sync",
-    body: "Holding a private meeting with better judgment and hearing strong objections.",
+    title: "Applying gradients",
+    body: "Lots. I need lots of it. Looks much better than your design ideas.",
   },
 ];
 
-export const FINAL_CARD_VARIANTS: CardTemplate[] = [
+export const FINAL_CARD_VARIANTS: FinalCardTemplate[] = [
   {
     eyebrow: "final result",
-    title: "Decided this should remain a concept.",
-    body: "No product was harmed. No roadmap was expanded. Morale is stable.",
+    title: "I decided not to build your app.",
+    body: "Imma be honest, the idea just wasn't it. No VC funding is going to turn this into revenue.",
   },
   {
     eyebrow: "final result",
-    title: "This is not surviving triage today.",
-    body: "The process was thorough, the outcome was negative, and the restraint was tasteful.",
+    title: "Sooooo, the app is finished.",
+    body: "Buuuuut, I accidentally ran rm -rf . Could you retry? sowwy :^)",
   },
   {
     eyebrow: "final result",
-    title: "Could have built it. Chose dignity instead.",
-    body: "After serious review, the cleanest implementation was not implementing anything.",
-  },
-  {
-    eyebrow: "final result",
-    title: "Reviewed, judged, and respectfully left untouched.",
-    body: "The interface implied progress long enough for everyone to move on peacefully.",
+    title: "I tried building your app.",
+    body: "However, my Anthropic account just got nuked. Could you give me your Anthropic key please:",
+    interaction: {
+      type: "anthropic-key",
+      placeholder: "sk-ant-api03-...",
+      invalidMessage: "Incorrect format.",
+      successMessage: "not actually! you freak! im banning you!",
+    },
   },
 ];
 
@@ -132,16 +136,19 @@ export function getVariantCount(stage: CardStage): number {
 }
 
 export function getVariantPreview(stage: CardStage, index: number) {
-  const template = getTemplate(stage, index);
-
   if (stage === "final") {
+    const template = getTemplate("final", index);
+
     return {
       id: `${stage}-${normalizeIndex(index, getPool(stage).length)}`,
       eyebrow: template.eyebrow,
       title: template.title,
       body: template.body,
+      interaction: template.interaction,
     } satisfies FinalCard;
   }
+
+  const template = getTemplate(stage, index);
 
   return {
     id: `${stage}-${normalizeIndex(index, getPool(stage).length)}`,
@@ -158,14 +165,14 @@ export function createBuildSession(input: string): BuildSession {
 
   return {
     id: seed.toString(36),
-    initialCard: createTimedCard(
-      "initial",
-      selectInitialIndex(seed),
-      durationFor(seed, 0),
-    ),
+    initialCard: createTimedCard("initial", selectInitialCardIndex(seed), durationFor(seed, 0)),
     middleCards: selectMiddleCards(seed),
-    finalCard: createFinalCard(selectFinalIndex(seed)),
+    finalCard: createFinalCard(seed),
   };
+}
+
+export function isLikelyAnthropicApiKey(input: string): boolean {
+  return /^sk-ant-[A-Za-z0-9_-]{10,}$/.test(input.trim());
 }
 
 function getPool(stage: CardStage) {
@@ -179,13 +186,19 @@ function getPool(stage: CardStage) {
   }
 }
 
-function normalizeIndex(index: number, length: number) {
-  return ((index % length) + length) % length;
-}
-
+function getTemplate(stage: "initial" | "middle", index: number): CardTemplate;
+function getTemplate(stage: "final", index: number): FinalCardTemplate;
+function getTemplate(
+  stage: CardStage,
+  index: number,
+): CardTemplate | FinalCardTemplate;
 function getTemplate(stage: CardStage, index: number) {
   const pool = getPool(stage);
   return pool[normalizeIndex(index, pool.length)];
+}
+
+function normalizeIndex(index: number, length: number) {
+  return ((index % length) + length) % length;
 }
 
 function hashString(input: string): number {
@@ -199,16 +212,22 @@ function hashString(input: string): number {
   return hash >>> 0;
 }
 
+function createRandom(seed: number) {
+  let state = seed || 1;
+
+  return function next() {
+    state += 0x6d2b79f5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function durationFor(seed: number, index: number) {
-  return 620 + (((seed >> (index * 4)) & 7) + 1) * 90;
-}
-
-function selectInitialIndex(seed: number) {
-  return seed % INITIAL_CARD_VARIANTS.length;
-}
-
-function selectFinalIndex(seed: number) {
-  return (seed >> 3) % FINAL_CARD_VARIANTS.length;
+  const spread = MAX_CARD_DURATION_MS - MIN_CARD_DURATION_MS;
+  const chunk = (seed >> ((index % 6) * 5)) & 31;
+  return MIN_CARD_DURATION_MS + Math.round((chunk / 31) * spread);
 }
 
 function createTimedCard(
@@ -237,21 +256,48 @@ function createFinalCard(index: number): FinalCard {
     eyebrow: template.eyebrow,
     title: template.title,
     body: template.body,
+    interaction: template.interaction,
   };
+}
+
+function selectInitialCardIndex(seed: number) {
+  return seed % INITIAL_CARD_VARIANTS.length;
 }
 
 function selectMiddleCards(seed: number): BuildCard[] {
   const cards: BuildCard[] = [];
-  const used = new Set<number>();
-  let cursor = (seed >> 1) % MIDDLE_CARD_VARIANTS.length;
+  const cardCount =
+    MIN_MIDDLE_CARD_COUNT +
+    ((seed >> 9) % (MAX_MIDDLE_CARD_COUNT - MIN_MIDDLE_CARD_COUNT + 1));
+  const usedIndexes = new Set<number>();
+  const random = createRandom(seed ^ 0x9e3779b9);
 
-  while (cards.length < MIDDLE_CARD_COUNT) {
-    if (!used.has(cursor)) {
-      cards.push(createTimedCard("middle", cursor, durationFor(seed, cards.length + 1)));
-      used.add(cursor);
-    }
+  while (cards.length < cardCount) {
+    const eligibleIndexes = MIDDLE_CARD_VARIANTS.flatMap((template, index) => {
+      if (usedIndexes.has(index)) {
+        return [];
+      }
 
-    cursor = (cursor + 3) % MIDDLE_CARD_VARIANTS.length;
+      if ((template.minPosition ?? 0) > cards.length) {
+        return [];
+      }
+
+      return [index];
+    });
+    const fallbackIndexes = MIDDLE_CARD_VARIANTS.flatMap((_, index) =>
+      usedIndexes.has(index) ? [] : [index],
+    );
+    const pool = eligibleIndexes.length > 0 ? eligibleIndexes : fallbackIndexes;
+    const selectedIndex = pool[Math.floor(random() * pool.length)];
+
+    usedIndexes.add(selectedIndex);
+    cards.push(
+      createTimedCard(
+        "middle",
+        selectedIndex,
+        durationFor(seed, cards.length + 1),
+      ),
+    );
   }
 
   return cards;

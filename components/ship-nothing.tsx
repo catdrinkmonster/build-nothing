@@ -8,6 +8,7 @@ import {
   createBuildSession,
   getVariantCount,
   getVariantPreview,
+  isLikelyAnthropicApiKey,
   type BuildCard,
   type BuildSession,
   type CardStage,
@@ -35,6 +36,13 @@ export function ShipNothing() {
   const activeStep = sequence[activeStepIndex] ?? null;
   const previewCount = getVariantCount(previewStage);
   const previewCard = devMode ? getVariantPreview(previewStage, previewIndex) : null;
+  const activeHeader = getActiveHeader(activeStepIndex, sequence.length);
+  const previewHeader = getPreviewHeader(
+    previewStage,
+    previewIndex,
+    getVariantCount("middle"),
+  );
+  const finalInteraction = isComplete ? session?.finalCard.interaction : undefined;
 
   useEffect(() => {
     if (!session) {
@@ -199,15 +207,42 @@ export function ShipNothing() {
                   </div>
 
                   <div className="panel-strong terminal-accent-left px-5 py-5">
-                    <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
-                      {previewCard.eyebrow}
-                    </p>
-                    <p className="mt-6 text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
+                        {previewHeader}
+                      </p>
+                      {previewStage === "final" ? (
+                        <div className="h-2 w-2 bg-[var(--accent)]" />
+                      ) : (
+                        <LoadingDots />
+                      )}
+                    </div>
+
+                    <p className="mt-6 whitespace-pre-line text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
                       {previewCard.title}
                     </p>
-                    <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
-                      {previewCard.body}
-                    </p>
+                    {previewCard.body ? (
+                      <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
+                        {previewCard.body}
+                      </p>
+                    ) : null}
+
+                    {previewStage === "final" &&
+                    previewCard.interaction?.type === "anthropic-key" ? (
+                      <AnthropicKeyTrap
+                        key={`preview-trap-${previewIndex}`}
+                        placeholder={previewCard.interaction.placeholder}
+                        invalidMessage={previewCard.interaction.invalidMessage}
+                        successMessage={previewCard.interaction.successMessage}
+                      />
+                    ) : null}
+
+                    {previewStage === "final" ? null : (
+                      <LoadingBar
+                        loadingKey={`preview-${previewStage}-${previewIndex}`}
+                        duration={1.8}
+                      />
+                    )}
                   </div>
                 </div>
               ) : null}
@@ -252,7 +287,7 @@ export function ShipNothing() {
 
                   <div className="min-h-[214px]">
                     <div className="panel-strong terminal-accent-left relative px-5 py-5">
-                      <AnimatePresence mode="wait" initial={false}>
+                      <AnimatePresence mode="wait">
                         {isComplete ? (
                           <motion.div
                             key={`result-${session.id}`}
@@ -263,17 +298,28 @@ export function ShipNothing() {
                           >
                             <div className="flex items-center justify-between gap-4">
                               <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
-                                {session.finalCard.eyebrow}
+                                final result
                               </p>
                               <div className="h-2 w-2 bg-[var(--accent)]" />
                             </div>
 
-                            <p className="mt-6 max-w-xl text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
+                            <p className="mt-6 max-w-xl whitespace-pre-line text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
                               {session.finalCard.title}
                             </p>
-                            <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
-                              {session.finalCard.body}
-                            </p>
+                            {session.finalCard.body ? (
+                              <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
+                                {session.finalCard.body}
+                              </p>
+                            ) : null}
+
+                            {finalInteraction?.type === "anthropic-key" ? (
+                              <AnthropicKeyTrap
+                                key={`final-trap-${session.finalCard.id}`}
+                                placeholder={finalInteraction.placeholder}
+                                invalidMessage={finalInteraction.invalidMessage}
+                                successMessage={finalInteraction.successMessage}
+                              />
+                            ) : null}
                           </motion.div>
                         ) : activeStep ? (
                           <motion.div
@@ -285,30 +331,24 @@ export function ShipNothing() {
                           >
                             <div className="flex items-center justify-between gap-4">
                               <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
-                                {activeStep.eyebrow}
+                                {activeHeader}
                               </p>
                               <LoadingDots />
                             </div>
 
-                            <p className="mt-6 text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
+                            <p className="mt-6 whitespace-pre-line text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
                               {activeStep.title}
                             </p>
-                            <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
-                              {activeStep.body}
-                            </p>
+                            {activeStep.body ? (
+                              <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
+                                {activeStep.body}
+                              </p>
+                            ) : null}
 
-                            <div className="mt-7 h-1 overflow-hidden bg-white/8">
-                              <motion.div
-                                key={activeStep.id}
-                                initial={{ x: "-100%" }}
-                                animate={{ x: "0%" }}
-                                transition={{
-                                  duration: Math.max(activeStep.durationMs / 1000, 0.75),
-                                  ease: "linear",
-                                }}
-                                className="h-full bg-[var(--accent)]"
-                              />
-                            </div>
+                            <LoadingBar
+                              loadingKey={activeStep.id}
+                              duration={Math.max(activeStep.durationMs / 1000, 0.75)}
+                            />
                           </motion.div>
                         ) : null}
                       </AnimatePresence>
@@ -342,4 +382,100 @@ function LoadingDots() {
       ))}
     </div>
   );
+}
+
+function AnthropicKeyTrap({
+  placeholder,
+  invalidMessage,
+  successMessage,
+}: {
+  placeholder: string;
+  invalidMessage: string;
+  successMessage: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const [isLocked, setIsLocked] = useState(false);
+  const showInvalidMessage = draft.length > 0 && !isLocked;
+
+  function handleChange(value: string) {
+    if (isLocked) {
+      return;
+    }
+
+    if (isLikelyAnthropicApiKey(value)) {
+      setDraft(successMessage);
+      setIsLocked(true);
+      return;
+    }
+
+    setDraft(value);
+  }
+
+  return (
+    <div className="mt-5 max-w-lg space-y-2">
+      <input
+        type="text"
+        value={draft}
+        onChange={(event) => handleChange(event.target.value)}
+        disabled={isLocked}
+        placeholder={placeholder}
+        spellCheck={false}
+        autoCorrect="off"
+        autoCapitalize="off"
+        className="terminal-text h-11 w-full bg-[var(--panel-soft)] px-4 text-sm text-white outline-none placeholder:text-white/22 disabled:text-white disabled:opacity-100"
+      />
+      <p className="terminal-text min-h-4 text-xs text-white/28">
+        {showInvalidMessage ? invalidMessage : "\u00a0"}
+      </p>
+    </div>
+  );
+}
+
+function LoadingBar({
+  loadingKey,
+  duration,
+}: {
+  loadingKey: string;
+  duration: number;
+}) {
+  return (
+    <div className="mt-7 h-1 overflow-hidden bg-white/8">
+      <motion.div
+        key={loadingKey}
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{
+          duration,
+          ease: "linear",
+        }}
+        style={{ originX: 0 }}
+        className="h-full w-full bg-[var(--accent)]"
+      />
+    </div>
+  );
+}
+
+function getActiveHeader(activeIndex: number, sequenceLength: number) {
+  if (activeIndex === 0) {
+    return "setting up";
+  }
+
+  const totalSteps = Math.max(sequenceLength - 1, 1);
+  return `step ${activeIndex} of ${totalSteps}`;
+}
+
+function getPreviewHeader(
+  stage: CardStage,
+  previewIndex: number,
+  middleCount: number,
+) {
+  if (stage === "initial") {
+    return "setting up";
+  }
+
+  if (stage === "final") {
+    return "final result";
+  }
+
+  return `step ${previewIndex + 1} of ${middleCount}`;
 }
