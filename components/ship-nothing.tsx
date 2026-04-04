@@ -288,6 +288,12 @@ export function ShipNothing() {
                         ) : null}
 
                         {previewCard.interaction?.type === "dino-runner" ? <AutoDino /> : null}
+                        {previewCard.interaction?.type === "meditation-timer" ? (
+                          <MeditationTimer
+                            key={`preview-meditation-${previewCard.id}`}
+                            durationMs={previewCard.durationMs ?? 7600}
+                          />
+                        ) : null}
                         {previewCard.interaction?.type === "fake-diff" ? (
                           <FakeAgentsDiff />
                         ) : null}
@@ -450,6 +456,12 @@ export function ShipNothing() {
 
                             {activeStep.interaction?.type === "dino-runner" ? (
                               <AutoDino />
+                            ) : null}
+                            {activeStep.interaction?.type === "meditation-timer" ? (
+                              <MeditationTimer
+                                key={`active-meditation-${activeStep.id}`}
+                                durationMs={activeStep.durationMs}
+                              />
                             ) : null}
                             {activeStep.interaction?.type === "fake-diff" ? (
                               <FakeAgentsDiff />
@@ -620,6 +632,33 @@ function FakeAgentsDiff() {
   );
 }
 
+function MeditationTimer({ durationMs }: { durationMs: number }) {
+  const [remainingMs, setRemainingMs] = useState(durationMs);
+
+  useEffect(() => {
+    const startedAt = Date.now();
+    const interval = window.setInterval(() => {
+      const nextRemainingMs = Math.max(durationMs - (Date.now() - startedAt), 0);
+      setRemainingMs(nextRemainingMs);
+    }, 100);
+
+    return () => window.clearInterval(interval);
+  }, [durationMs]);
+
+  return (
+    <div className="mt-5 flex min-h-[168px] w-full items-center justify-center">
+      <div className="space-y-2 text-center">
+        <p className="terminal-text text-[11px] uppercase tracking-[0.16em] text-white/34">
+          breath work
+        </p>
+        <p className="terminal-text text-3xl text-white/88 sm:text-4xl">
+          {formatCountdown(remainingMs)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function FakeCaptcha({ onVerified }: { onVerified?: () => void }) {
   const [status, setStatus] = useState<"idle" | "loading" | "verified">("idle");
 
@@ -678,6 +717,17 @@ function FakeCaptcha({ onVerified }: { onVerified?: () => void }) {
       </div>
     </button>
   );
+}
+
+function formatCountdown(durationMs: number) {
+  const totalTenths = Math.ceil(durationMs / 100);
+  const minutes = Math.floor(totalTenths / 600);
+  const seconds = Math.floor((totalTenths % 600) / 10);
+  const tenths = totalTenths % 10;
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds
+    .toString()
+    .padStart(2, "0")}.${tenths}`;
 }
 
 function LoadingDots() {
@@ -748,12 +798,12 @@ function AnthropicKeyTrap({
 }
 
 const DODGE_BUTTON_POSITIONS = [
-  { left: "14%", top: "50%" },
-  { left: "36%", top: "24%" },
-  { left: "62%", top: "68%" },
-  { left: "84%", top: "32%" },
-  { left: "54%", top: "50%" },
-  { left: "24%", top: "76%" },
+  { left: "18%", top: "50%" },
+  { left: "34%", top: "24%" },
+  { left: "58%", top: "68%" },
+  { left: "78%", top: "32%" },
+  { left: "52%", top: "50%" },
+  { left: "26%", top: "76%" },
 ] as const;
 
 function DodgingCodeLinkTrap({
@@ -787,8 +837,8 @@ function DodgingCodeLinkTrap({
   const activePosition = DODGE_BUTTON_POSITIONS[positionIndex];
 
   return (
-    <div className="mt-5 max-w-lg space-y-2">
-      <div className="relative h-24 bg-[var(--field)]">
+    <div className="mt-5 w-full space-y-2">
+      <div className="relative h-[168px] w-full">
         <button
           type="button"
           onMouseEnter={moveButton}
@@ -797,7 +847,7 @@ function DodgingCodeLinkTrap({
             moveButton();
           }}
           onClick={handleClick}
-          className="terminal-text absolute h-10 -translate-x-1/2 -translate-y-1/2 bg-[var(--panel-soft)] px-4 text-sm text-white outline-none transition-[left,top] duration-75 ease-linear"
+          className="terminal-text absolute flex h-10 min-w-[132px] -translate-x-1/2 -translate-y-1/2 items-center justify-center whitespace-nowrap bg-[var(--panel-soft)] px-4 text-sm text-white outline-none transition-[left,top] duration-75 ease-linear"
           style={activePosition}
         >
           {isCaught ? "Nice try" : buttonLabel}

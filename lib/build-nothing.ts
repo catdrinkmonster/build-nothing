@@ -17,6 +17,9 @@ export type BuildCardInteraction =
     }
   | {
       type: "fake-captcha";
+    }
+  | {
+      type: "meditation-timer";
     };
 
 export type FinalCardInteraction =
@@ -172,6 +175,15 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
     body: "HAHAHAHAHAHAHA just kidding! I want this app to actually work.",
   },
   {
+    key: "meditating",
+    eyebrow: "workstream",
+    title: "Meditating",
+    body: "Trying to solve the architecture telepathically.",
+    interaction: {
+      type: "meditation-timer",
+    },
+  },
+  {
     key: "agents-md",
     eyebrow: "workstream",
     title: "Updating AGENTS.md",
@@ -296,7 +308,7 @@ export function getVariantPreview(stage: CardStage, index: number) {
     title: template.title,
     body: template.body,
     interaction: template.interaction,
-    durationMs: 920,
+    durationMs: 7600,
   } satisfies BuildCard;
 }
 

@@ -29,13 +29,13 @@ describe("normalizePrompt", () => {
 describe("variant pools", () => {
   it("reports the configured variant counts for each stage", () => {
     expect(getVariantCount("initial")).toBe(3);
-    expect(getVariantCount("middle")).toBe(11);
+    expect(getVariantCount("middle")).toBe(12);
     expect(getVariantCount("final")).toBe(6);
   });
 
   it("returns the same preview regardless of index wrapping", () => {
     expect(getVariantPreview("initial", 0)).toEqual(getVariantPreview("initial", 3));
-    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 11));
+    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 12));
     expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 12));
   });
 
@@ -70,6 +70,14 @@ describe("variant pools", () => {
     );
 
     expect(variant?.title).toBe("Applying gradients");
+  });
+
+  it("exposes the meditation timer interaction on the dedicated middle variant", () => {
+    const variant = MIDDLE_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "meditation-timer",
+    );
+
+    expect(variant?.title).toBe("Meditating");
   });
 
   it("exposes the fake-diff interaction on the dedicated middle variant", () => {
