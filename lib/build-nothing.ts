@@ -19,12 +19,18 @@ export type BuildCardInteraction =
       type: "fake-captcha";
     };
 
-export type FinalCardInteraction = {
-  type: "anthropic-key";
-  placeholder: string;
-  invalidMessage: string;
-  successMessage: string;
-};
+export type FinalCardInteraction =
+  | {
+      type: "anthropic-key";
+      placeholder: string;
+      invalidMessage: string;
+      successMessage: string;
+    }
+  | {
+      type: "dodge-code-link";
+      buttonLabel: string;
+      successMessage: string;
+    };
 
 export type BuildCard = {
   id: string;
@@ -221,6 +227,12 @@ export const FINAL_CARD_VARIANTS: FinalCardTemplate[] = [
     body: "I accidentally ran rm -rf on the entire codebase. Could you retry the whole thing? sowwy >.<",
   },
   {
+    key: "own-stack",
+    eyebrow: "final result",
+    title: "I finished building the app!",
+    body: "Unfortunately, the idea was actually good. So I pushed it to my own stack. Made like 15 bucks already. I'll leave you some credit if you'd like. :)",
+  },
+  {
     key: "anthropic-key",
     eyebrow: "final result",
     title: "I tried building your app.",
@@ -230,6 +242,17 @@ export const FINAL_CARD_VARIANTS: FinalCardTemplate[] = [
       placeholder: "sk-ant-api03-...",
       invalidMessage: "Incorrect format.",
       successMessage: "not actually! you freak! im banning you!",
+    },
+  },
+  {
+    key: "dodge-code-link",
+    eyebrow: "final result",
+    title: "It's done! Click here to access the code",
+    interaction: {
+      type: "dodge-code-link",
+      buttonLabel: "Access code",
+      successMessage:
+        "wow you actually did all that to find out what happens. go back to twitter, nerd!",
     },
   },
   {

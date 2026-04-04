@@ -309,6 +309,13 @@ export function ShipNothing() {
                             invalidMessage={previewCard.interaction.invalidMessage}
                             successMessage={previewCard.interaction.successMessage}
                           />
+                        ) : previewStage === "final" &&
+                          previewCard.interaction?.type === "dodge-code-link" ? (
+                          <DodgingCodeLinkTrap
+                            key={`preview-dodge-${previewCard.id}`}
+                            buttonLabel={previewCard.interaction.buttonLabel}
+                            successMessage={previewCard.interaction.successMessage}
+                          />
                         ) : null}
 
                         {previewStage === "final" ||
@@ -397,6 +404,12 @@ export function ShipNothing() {
                                 key={`final-trap-${session.finalCard.id}`}
                                 placeholder={finalInteraction.placeholder}
                                 invalidMessage={finalInteraction.invalidMessage}
+                                successMessage={finalInteraction.successMessage}
+                              />
+                            ) : finalInteraction?.type === "dodge-code-link" ? (
+                              <DodgingCodeLinkTrap
+                                key={`final-dodge-${session.finalCard.id}`}
+                                buttonLabel={finalInteraction.buttonLabel}
                                 successMessage={finalInteraction.successMessage}
                               />
                             ) : null}
@@ -729,6 +742,69 @@ function AnthropicKeyTrap({
       />
       <p className="terminal-text min-h-4 text-xs text-white/28">
         {showInvalidMessage ? invalidMessage : "\u00a0"}
+      </p>
+    </div>
+  );
+}
+
+const DODGE_BUTTON_POSITIONS = [
+  { left: "14%", top: "50%" },
+  { left: "36%", top: "24%" },
+  { left: "62%", top: "68%" },
+  { left: "84%", top: "32%" },
+  { left: "54%", top: "50%" },
+  { left: "24%", top: "76%" },
+] as const;
+
+function DodgingCodeLinkTrap({
+  buttonLabel,
+  successMessage,
+}: {
+  buttonLabel: string;
+  successMessage: string;
+}) {
+  const [positionIndex, setPositionIndex] = useState(0);
+  const [isCaught, setIsCaught] = useState(false);
+
+  function moveButton() {
+    if (isCaught) {
+      return;
+    }
+
+    setPositionIndex((current) => (current + 1) % DODGE_BUTTON_POSITIONS.length);
+  }
+
+  function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+    if (event.detail > 0) {
+      event.preventDefault();
+      moveButton();
+      return;
+    }
+
+    setIsCaught(true);
+  }
+
+  const activePosition = DODGE_BUTTON_POSITIONS[positionIndex];
+
+  return (
+    <div className="mt-5 max-w-lg space-y-2">
+      <div className="relative h-24 bg-[var(--field)]">
+        <button
+          type="button"
+          onMouseEnter={moveButton}
+          onPointerDown={(event) => {
+            event.preventDefault();
+            moveButton();
+          }}
+          onClick={handleClick}
+          className="terminal-text absolute h-10 -translate-x-1/2 -translate-y-1/2 bg-[var(--panel-soft)] px-4 text-sm text-white outline-none transition-[left,top] duration-75 ease-linear"
+          style={activePosition}
+        >
+          {isCaught ? "Nice try" : buttonLabel}
+        </button>
+      </div>
+      <p className="terminal-text min-h-4 text-xs text-white/28">
+        {isCaught ? successMessage : "\u00a0"}
       </p>
     </div>
   );

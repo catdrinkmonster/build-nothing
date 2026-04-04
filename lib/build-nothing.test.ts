@@ -30,13 +30,13 @@ describe("variant pools", () => {
   it("reports the configured variant counts for each stage", () => {
     expect(getVariantCount("initial")).toBe(3);
     expect(getVariantCount("middle")).toBe(11);
-    expect(getVariantCount("final")).toBe(4);
+    expect(getVariantCount("final")).toBe(6);
   });
 
   it("returns the same preview regardless of index wrapping", () => {
     expect(getVariantPreview("initial", 0)).toEqual(getVariantPreview("initial", 3));
     expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 11));
-    expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 8));
+    expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 12));
   });
 
   it("exposes the tenor embed interaction on the planning initial variant", () => {
@@ -96,6 +96,15 @@ describe("variant pools", () => {
       "rm -rf on the entire codebase",
     );
   });
+
+  it("exposes the dodge-code-link interaction on the dedicated final variant", () => {
+    const variant = FINAL_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "dodge-code-link",
+    );
+
+    expect(variant?.title).toBe("It's done! Click here to access the code");
+    expect(variant?.interaction?.successMessage).toContain("go back to twitter");
+  });
 });
 
 describe("isLikelyAnthropicApiKey", () => {
@@ -152,7 +161,10 @@ describe("createBuildSession", () => {
     expect(
       FINAL_CARD_VARIANTS.some((variant) => variant.title === session.finalCard.title),
     ).toBe(true);
-    expect(session.finalCard.body?.length ?? 0).toBeGreaterThan(20);
+    expect(
+      (session.finalCard.body?.length ?? 0) > 20 ||
+        session.finalCard.interaction?.type === "dodge-code-link",
+    ).toBe(true);
   });
 
   it("biases initial selection toward unseen variants", () => {
