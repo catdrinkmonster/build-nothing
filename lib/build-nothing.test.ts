@@ -27,14 +27,22 @@ describe("normalizePrompt", () => {
 describe("variant pools", () => {
   it("reports the configured variant counts for each stage", () => {
     expect(getVariantCount("initial")).toBe(2);
-    expect(getVariantCount("middle")).toBe(7);
+    expect(getVariantCount("middle")).toBe(8);
     expect(getVariantCount("final")).toBe(3);
   });
 
   it("returns the same preview regardless of index wrapping", () => {
     expect(getVariantPreview("initial", 0)).toEqual(getVariantPreview("initial", 2));
-    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 7));
+    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 8));
     expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 9));
+  });
+
+  it("exposes the dino-runner interaction on the dedicated middle variant", () => {
+    const variant = MIDDLE_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "dino-runner",
+    );
+
+    expect(variant?.title).toBe("Playing the Chrome dinosaur game");
   });
 });
 

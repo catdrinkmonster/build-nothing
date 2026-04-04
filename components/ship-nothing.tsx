@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 
+import { AutoDino } from "@/components/auto-dino";
 import {
   DEFAULT_IDEA,
   createBuildSession,
@@ -227,6 +228,8 @@ export function ShipNothing() {
                       </p>
                     ) : null}
 
+                    {previewCard.interaction?.type === "dino-runner" ? <AutoDino /> : null}
+
                     {previewStage === "final" &&
                     previewCard.interaction?.type === "anthropic-key" ? (
                       <AnthropicKeyTrap
@@ -343,6 +346,10 @@ export function ShipNothing() {
                               <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
                                 {activeStep.body}
                               </p>
+                            ) : null}
+
+                            {activeStep.interaction?.type === "dino-runner" ? (
+                              <AutoDino />
                             ) : null}
 
                             <LoadingBar

@@ -5,6 +5,7 @@ export type BuildCard = {
   eyebrow: string;
   title: string;
   body?: string;
+  interaction?: BuildCardInteraction;
   durationMs: number;
 };
 
@@ -16,22 +17,8 @@ export type FinalCard = {
   interaction?: FinalCardInteraction;
 };
 
-export type BuildSession = {
-  id: string;
-  initialCard: BuildCard;
-  middleCards: BuildCard[];
-  finalCard: FinalCard;
-};
-
-type CardTemplate = {
-  eyebrow: string;
-  title: string;
-  body?: string;
-  minPosition?: number;
-};
-
-type FinalCardTemplate = CardTemplate & {
-  interaction?: FinalCardInteraction;
+export type BuildCardInteraction = {
+  type: "dino-runner";
 };
 
 export type FinalCardInteraction = {
@@ -39,6 +26,28 @@ export type FinalCardInteraction = {
   placeholder: string;
   invalidMessage: string;
   successMessage: string;
+};
+
+export type BuildSession = {
+  id: string;
+  initialCard: BuildCard;
+  middleCards: BuildCard[];
+  finalCard: FinalCard;
+};
+
+type BaseCardTemplate = {
+  eyebrow: string;
+  title: string;
+  body?: string;
+  minPosition?: number;
+};
+
+type CardTemplate = BaseCardTemplate & {
+  interaction?: BuildCardInteraction;
+};
+
+type FinalCardTemplate = BaseCardTemplate & {
+  interaction?: FinalCardInteraction;
 };
 
 const MIN_MIDDLE_CARD_COUNT = 3;
@@ -94,6 +103,14 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
     eyebrow: "workstream",
     title: "Shipping source maps in production",
     body: "Can't hurt.",
+  },
+  {
+    eyebrow: "workstream",
+    title: "Playing the Chrome dinosaur game",
+    body: "This technically counts as product research.",
+    interaction: {
+      type: "dino-runner",
+    },
   },
   {
     eyebrow: "workstream",
@@ -155,6 +172,7 @@ export function getVariantPreview(stage: CardStage, index: number) {
     eyebrow: template.eyebrow,
     title: template.title,
     body: template.body,
+    interaction: template.interaction,
     durationMs: 920,
   } satisfies BuildCard;
 }
@@ -243,6 +261,7 @@ function createTimedCard(
     eyebrow: template.eyebrow,
     title: template.title,
     body: template.body,
+    interaction: template.interaction,
     durationMs,
   };
 }
