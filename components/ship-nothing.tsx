@@ -393,7 +393,7 @@ export function ShipNothing() {
                         rel="noreferrer"
                         className="terminal-text text-xs tracking-[0.06em] text-white/42 transition hover:text-white/72"
                       >
-                        had a laugh? consider a small donation :)
+                        made you smile? consider a small donation :)
                       </a>
                     </div>
                   ) : null}
