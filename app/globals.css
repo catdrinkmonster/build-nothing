@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0b;
+  --background: #171719;
   --foreground: #f2f2f3;
   --muted: #8a8a8f;
-  --line: #232428;
-  --line-strong: #303238;
-  --panel: #111215;
-  --panel-strong: #15141b;
-  --panel-soft: #17171d;
-  --field: #0f1012;
+  --line: #313238;
+  --line-strong: #40424a;
+  --panel: #1c1d22;
+  --panel-strong: #202126;
+  --panel-soft: #25272d;
+  --field: #1a1b20;
   --accent: #74f0c1;
   --accent-soft: rgba(116, 240, 193, 0.14);
 }
@@ -44,7 +44,7 @@ body::before {
   background-size: 96px 96px;
   content: "";
   inset: 0;
-  opacity: 0.1;
+  opacity: 0.24;
   mask-image: linear-gradient(180deg, black, transparent 92%);
   pointer-events: none;
   position: fixed;
