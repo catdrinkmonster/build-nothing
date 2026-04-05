@@ -98,7 +98,7 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
   {
     key: "token-bomb",
     eyebrow: "workstream",
-    title: "Can you quickly check if this is a token bomb: \u{1F525}",
+    title: "Can you quickly check for me if this is a token bomb: \u{1F525}",
     body: "3,000,000 tokens feels like a lot for an emoji.",
   },
   {
