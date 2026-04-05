@@ -191,7 +191,7 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
   {
     key: "dino-runner",
     eyebrow: "workstream",
-    title: "Hold up, internet down.",
+    title: "Hold up, internet down",
     body: "This technically counts as product research.",
     interaction: {
       type: "dino-runner",
