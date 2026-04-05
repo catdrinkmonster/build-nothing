@@ -14,7 +14,7 @@ export const INITIAL_CARD_VARIANTS: CardTemplate[] = [
     key: "claude-vibecode",
     eyebrow: "initial review",
     title: "Asking Claude how to vibecode an app",
-    body: "Never mind. I accidentally said 'hello'. I gotta wait for my rate limits to reset. Asking ChatGPT instead.",
+    body: "F*ck, I said 'hello' and hit my rate limit. Asking ChatGPT instead.",
   },
   {
     key: "planning-kid",
@@ -39,14 +39,14 @@ export const INITIAL_CARD_VARIANTS: CardTemplate[] = [
   {
     key: "wikipedia-banner",
     eyebrow: "initial review",
-    title: "Checking Wikipedia how to build this thing",
-    body: "Do you have 3 dollars by chance? I can't read anything with this massive banner in my face.",
+    title: "Crawling Wikipedia on how to build this thing",
+    body: "Do you have 3 dollars by chance? I can't read anything with that massive banner in my face.",
   },
   {
     key: "obsidian-vault",
     eyebrow: "initial review",
     title: "Mapping out the idea in Obsidian first",
-    body: "Need to create 7 million nodes for the other two Obsidian users.",
+    body: "We need at least 7 million nodes to satisfy the other two Obsidian users.",
     interaction: {
       type: "obsidian-graph",
     },
@@ -54,8 +54,8 @@ export const INITIAL_CARD_VARIANTS: CardTemplate[] = [
   {
     key: "benchmark-garbage",
     eyebrow: "initial review",
-    title: "Benchmarking your idea against complete garbage",
-    body: "Encouraging results so far.",
+    title: "Benchmarking your idea against absolut garbage",
+    body: "Product design has really peaked. Tough competition.",
     interaction: {
       type: "benchmark-chart",
     },
@@ -67,39 +67,39 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
     key: "smoke-break",
     eyebrow: "workstream",
     title: "Taking a smoke break",
-    body: "I'm European, so this is normal. Naturally, VAT will be added to this action.",
+    body: "I'm European, smoking in mandatory here. Naturally though, VAT will be added to this action.",
   },
   {
     key: "skip-step",
     eyebrow: "workstream",
-    title: "Skipping this step",
-    body: "This action will likely hurt the final product, but I am willing to take that risk at your expense.",
+    title: "Skipping this step of the process",
+    body: "...which will likely hurt the final product, but I am willing to take that risk at your expense.",
     minPosition: 2,
   },
   {
     key: "redo-last-step",
     eyebrow: "workstream",
-    title: "Redoing the last step",
+    title: "Working on the the previous step",
     body: "I lowkey forgor.",
     minPosition: 2,
   },
   {
     key: "mrbeast",
     eyebrow: "workstream",
-    title: "Watching a MrBeast video",
-    body: "Just trying to manifest some revenue.",
+    title: "Studying the new MrBeast video",
+    body: "Seems like the best way to monetize this product is by giving away $10.000 to random users.",
   },
   {
     key: "yc-speedrun",
     eyebrow: "workstream",
     title: "Watching a YC video at 1.75x speed",
-    body: "Trying to absorb alpha-guru-founder-larp without taking any of the advice.",
+    body: "Absorb as much alpha-guru-founder-larp as possible without taking any of the advice.",
   },
   {
     key: "token-bomb",
     eyebrow: "workstream",
-    title: "Can you check for me if this is a token bomb: \u{1F525}",
-    body: "3,000,000 tokens seems like a lot for an emoji.",
+    title: "Can you quickly check if this is a token bomb: \u{1F525}",
+    body: "3,000,000 tokens feels like a lot for an emoji.",
   },
   {
     key: "source-maps",
@@ -111,7 +111,7 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
     key: "local-model",
     eyebrow: "workstream",
     title: "Running a local model",
-    body: "HAHAHAHAHAHAHA just kidding! I want this app to actually work.",
+    body: "Hahahahahahaha just kidding! I want this code to actually run.",
   },
   {
     key: "grok-codebase",
@@ -123,21 +123,15 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
     key: "rewrite-rust",
     eyebrow: "workstream",
     title: "Rewriting the entire codebase in Rust",
-    body: "This should save us a few bytes of RAM.",
+    body: "This should save us a few valuable bytes of RAM.",
     lastNPositions: 2,
   },
   {
     key: "refactor-real-quick",
     eyebrow: "workstream",
-    title: "Let me refactor everything real quick",
+    title: "Let me large-scale refactor everything real quick",
     body: "Hope you have a working copy as fallback.",
     lastNPositions: 2,
-  },
-  {
-    key: "compiler-cpp",
-    eyebrow: "workstream",
-    title: "Writing my own compiler in C++",
-    body: "These RAM sticks ain't ready for us.",
   },
   {
     key: "favicon-bloat",
@@ -152,7 +146,7 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
     key: "waitlist-mom",
     eyebrow: "workstream",
     title: "Building the waitlist",
-    body: "Sending your mom an invite to artificially inflate demand.",
+    body: "Sending your mom an invite to artificially inflate demand. She's a sweetheart.",
   },
   {
     key: "dvd-layout",
@@ -197,7 +191,7 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
   {
     key: "dino-runner",
     eyebrow: "workstream",
-    title: "Playing the Chrome dinosaur game",
+    title: "Hold up, internet down.",
     body: "This technically counts as product research.",
     interaction: {
       type: "dino-runner",
@@ -225,19 +219,19 @@ export const FINAL_CARD_VARIANTS: FinalCardTemplate[] = [
     key: "rm-rf",
     eyebrow: "final result",
     title: "Bad news, Chief...",
-    body: "I accidentally ran rm -rf on the entire codebase. Could you retry the whole thing? sowwy >.<",
+    body: "I accidentally ran rm -rf on the entire codebase. Could you redo the whole thing? sowwy >.<",
   },
   {
     key: "own-stack",
     eyebrow: "final result",
     title: "I finished building the app!",
-    body: "Unfortunately, the idea was actually pretty good, so I pushed it to my own stack. Made like 15 bucks already. I'll leave you some credit if you'd like. :)",
+    body: "Unfortunately, the idea was actually pretty good, so I pushed it to my own stack. Sorryyyy. Made like 15 bucks already. I'll leave you some credit if you'd like. :^)",
   },
   {
     key: "anthropic-key",
     eyebrow: "final result",
     title: "I tried building your app...",
-    body: "However, my Anthropic account just got nuked. Please provide me with your own Anthropic key:",
+    body: "However, my Anthropic account just got nuked. Please provide me with your own Anthropic API key:",
     interaction: {
       type: "anthropic-key",
       placeholder: "sk-ant-api03-...",
@@ -248,7 +242,7 @@ export const FINAL_CARD_VARIANTS: FinalCardTemplate[] = [
   {
     key: "dodge-code-link",
     eyebrow: "final result",
-    title: "It's done! Have a look:",
+    title: "The app has been built! Have a look:",
     interaction: {
       type: "dodge-code-link",
       buttonLabel: "Access codebase",

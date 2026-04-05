@@ -30,13 +30,13 @@ describe("normalizePrompt", () => {
 describe("variant pools", () => {
   it("reports the configured variant counts for each stage", () => {
     expect(getVariantCount("initial")).toBe(6);
-    expect(getVariantCount("middle")).toBe(20);
+    expect(getVariantCount("middle")).toBe(19);
     expect(getVariantCount("final")).toBe(7);
   });
 
   it("returns the same preview regardless of index wrapping", () => {
     expect(getVariantPreview("initial", 0)).toEqual(getVariantPreview("initial", 6));
-    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 20));
+    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 19));
     expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 14));
   });
 
@@ -62,7 +62,7 @@ describe("variant pools", () => {
       (card) => card.key === "wikipedia-banner",
     );
 
-    expect(variant?.title).toBe("Checking Wikipedia how to build this thing");
+    expect(variant?.title).toBe("Crawling Wikipedia on how to build this thing");
   });
 
   it("includes the Obsidian-mapping initial variant", () => {
@@ -71,7 +71,9 @@ describe("variant pools", () => {
     );
 
     expect(variant?.title).toBe("Mapping out the idea in Obsidian first");
-    expect(variant?.body).toBe("Need to create 7 million nodes for the other two Obsidian users.");
+    expect(variant?.body).toBe(
+      "We need at least 7 million nodes to satisfy the other two Obsidian users.",
+    );
     expect(variant?.interaction?.type).toBe("obsidian-graph");
   });
 
@@ -80,7 +82,7 @@ describe("variant pools", () => {
       (card) => card.interaction?.type === "benchmark-chart",
     );
 
-    expect(variant?.title).toBe("Benchmarking your idea against complete garbage");
+    expect(variant?.title).toBe("Benchmarking your idea against absolut garbage");
   });
 
   it("exposes the dino-runner interaction on the dedicated middle variant", () => {
@@ -88,7 +90,7 @@ describe("variant pools", () => {
       (card) => card.interaction?.type === "dino-runner",
     );
 
-    expect(variant?.title).toBe("Playing the Chrome dinosaur game");
+    expect(variant?.title).toBe("Hold up, internet down.");
   });
 
   it("exposes the ugly-gradients interaction on the dedicated middle variant", () => {
@@ -147,16 +149,8 @@ describe("variant pools", () => {
       (card) => card.key === "rewrite-rust",
     );
 
-    expect(variant?.body).toBe("This should save us a few bytes of RAM.");
+    expect(variant?.body).toBe("This should save us a few valuable bytes of RAM.");
     expect(variant?.lastNPositions).toBe(2);
-  });
-
-  it("includes the compiler gag variant", () => {
-    const variant = MIDDLE_CARD_VARIANTS.find(
-      (card) => card.key === "compiler-cpp",
-    );
-
-    expect(variant?.title).toBe("Writing my own compiler in C++");
   });
 
   it("includes the YC-speedrun variant", () => {
@@ -172,7 +166,9 @@ describe("variant pools", () => {
       (card) => card.key === "waitlist-mom",
     );
 
-    expect(variant?.body).toBe("Sending your mom an invite to artificially inflate demand.");
+    expect(variant?.body).toBe(
+      "Sending your mom an invite to artificially inflate demand. She's a sweetheart.",
+    );
   });
 
   it("keeps the whole-project deletion joke explicit", () => {
