@@ -215,7 +215,7 @@ describe("createBuildSession", () => {
     expect(first).toEqual(second);
   });
 
-  it("uses prompt-stable initial and final variants while varying middle count and durations", () => {
+  it("uses prompt-stable initial and final variants with a fixed five-step middle run", () => {
     const session = createBuildSession("dog-friendly dating app");
     const restrictedTitles = new Set(["Skipping this step", "Redoing the last step"]);
     const lateOnlyTitles = new Set([
@@ -231,8 +231,7 @@ describe("createBuildSession", () => {
     ).toBe(true);
     expect(session.initialCard.durationMs).toBe(DEFAULT_CARD_DURATION_MS);
 
-    expect(session.middleCards.length).toBeGreaterThanOrEqual(3);
-    expect(session.middleCards.length).toBeLessThanOrEqual(5);
+    expect(session.middleCards.length).toBe(5);
     expect(new Set(session.middleCards.map((card) => card.title)).size).toBe(
       session.middleCards.length,
     );
@@ -265,12 +264,11 @@ describe("createBuildSession", () => {
     ).toBe(true);
   });
 
-  it("always generates between three and five middle cards across many prompts", () => {
+  it("always generates exactly five middle cards across many prompts", () => {
     for (let index = 0; index < 250; index += 1) {
       const session = createBuildSession(`count-range-${index}`, INITIAL_ROTATION_STATE);
 
-      expect(session.middleCards.length).toBeGreaterThanOrEqual(3);
-      expect(session.middleCards.length).toBeLessThanOrEqual(5);
+      expect(session.middleCards.length).toBe(5);
     }
   });
 
@@ -315,8 +313,7 @@ describe("createBuildSession", () => {
       middle: ["watch-dog"],
     });
 
-    expect(session.middleCards.length).toBeGreaterThanOrEqual(3);
-    expect(session.middleCards.length).toBeLessThanOrEqual(5);
+    expect(session.middleCards.length).toBe(5);
     expect(session.middleCards.at(-1)?.variantKey).toBe("watch-dog");
   });
 

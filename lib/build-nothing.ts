@@ -38,8 +38,7 @@ export {
   MIDDLE_CARD_VARIANTS,
 } from "./build-nothing-variants";
 
-const MIN_MIDDLE_CARD_COUNT = 3;
-const MAX_MIDDLE_CARD_COUNT = 5;
+const FIXED_MIDDLE_CARD_COUNT = 5;
 
 export function normalizePrompt(input: string): string {
   const normalized = input.trim().replace(/\s+/g, " ");
@@ -230,17 +229,11 @@ function selectInitialCardIndex(
 
 function selectMiddleCards(seed: number, rotationState: VariantRotationState) {
   const cards: BuildCard[] = [];
-  const countRandom = createRandom(seed ^ 0x85ebca6b);
-  const cardCount =
-    MIN_MIDDLE_CARD_COUNT +
-    Math.floor(
-      countRandom() * (MAX_MIDDLE_CARD_COUNT - MIN_MIDDLE_CARD_COUNT + 1),
-    );
   const random = createRandom(seed ^ 0x9e3779b9);
   const usedKeys = new Set<string>();
   let forcedFinalKey: string | undefined;
 
-  while (cards.length < cardCount) {
+  while (cards.length < FIXED_MIDDLE_CARD_COUNT) {
     const candidates = MIDDLE_CARD_VARIANTS.filter((template) => {
       if (usedKeys.has(template.key)) {
         return false;
@@ -251,11 +244,11 @@ function selectMiddleCards(seed: number, rotationState: VariantRotationState) {
       }
 
       if (template.mustBeLast) {
-        return cards.length === cardCount - 1;
+        return cards.length === FIXED_MIDDLE_CARD_COUNT - 1;
       }
 
       if (template.lastNPositions) {
-        return cards.length >= cardCount - template.lastNPositions;
+        return cards.length >= FIXED_MIDDLE_CARD_COUNT - template.lastNPositions;
       }
 
       return true;
@@ -357,12 +350,9 @@ function advanceRotationKeys<T extends { key: string }>(
 }
 
 function ensureValidMiddleCardCount(cards: BuildCard[]) {
-  if (
-    cards.length < MIN_MIDDLE_CARD_COUNT ||
-    cards.length > MAX_MIDDLE_CARD_COUNT
-  ) {
+  if (cards.length !== FIXED_MIDDLE_CARD_COUNT) {
     throw new Error(
-      `Expected ${MIN_MIDDLE_CARD_COUNT}-${MAX_MIDDLE_CARD_COUNT} middle cards, received ${cards.length}.`,
+      `Expected ${FIXED_MIDDLE_CARD_COUNT} middle cards, received ${cards.length}.`,
     );
   }
 
