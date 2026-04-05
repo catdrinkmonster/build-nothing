@@ -8,7 +8,11 @@ import { useEffect, useMemo, useState } from "react";
 import { AutoDino } from "@/components/auto-dino";
 import { DvdLayout } from "@/components/dvd-layout";
 import { TenorEmbed } from "@/components/tenor-embed";
-import { BENCHMARK_CHART_ROWS } from "@/lib/benchmark-chart";
+import {
+  BENCHMARK_CHART_ROWS,
+  BENCHMARK_ROW_FILL_DURATION_S,
+  getBenchmarkRowDelay,
+} from "@/lib/benchmark-chart";
 import {
   OBSIDIAN_GRAPH_EDGES,
   OBSIDIAN_GRAPH_NODES,
@@ -20,6 +24,7 @@ import {
   INITIAL_ROTATION_STATE,
   advanceRotationState,
   createBuildSession,
+  type FinalCard,
   getVariantCount,
   getVariantPreview,
   isLikelyAnthropicApiKey,
@@ -218,7 +223,7 @@ export function ShipNothing() {
             >
               <div className="mb-5 px-2 text-center">
                 <h1 className="terminal-text text-lg font-medium text-white/94 sm:text-xl">
-                  What do you not want to build today?
+                  What don&apos;t you want to build today?
                 </h1>
               </div>
 
@@ -284,104 +289,25 @@ export function ShipNothing() {
                   <div className="space-y-3">
                     {previewCards.map((previewCard, index) => (
                       <div
-                        key={`${previewStage}-${previewCard.id}`}
+                        key={`${previewStage}-${previewCard.id}-${previewCycle}`}
                         className={getCardShellClassName()}
                         style={getCardShellStyle(previewCard.interaction?.type)}
                       >
-                        <div className="flex items-center justify-between gap-4">
-                          <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
-                            {getPreviewHeader(previewStage, index, getVariantCount("middle"))}
-                          </p>
-                          {previewStage === "final" ? (
-                            <div className="h-2 w-2 bg-[var(--accent)]" />
-                          ) : previewCard.interaction?.type === "fake-captcha" ? null : (
-                            <LoadingDots />
-                          )}
-                        </div>
-
-                        {previewCard.interaction?.type === "ugly-gradients" ? (
-                          <GradientTitle>{previewCard.title}</GradientTitle>
+                        {previewStage === "final" ? (
+                          <FinalCardView
+                            card={previewCard as FinalCard}
+                            playToken={`preview-${previewStage}-${previewCard.id}-${previewCycle}`}
+                          />
                         ) : (
-                          <p
-                            className={getCardTitleClassName(previewCard.interaction?.type)}
-                          >
-                            {previewCard.title}
-                          </p>
-                        )}
-                        {previewCard.body ? (
-                          previewCard.interaction?.type === "ugly-gradients" ? (
-                            <GradientBody>{previewCard.body}</GradientBody>
-                          ) : (
-                            <p
-                              className={getCardBodyClassName(previewCard.interaction?.type)}
-                            >
-                              {previewCard.body}
-                            </p>
-                          )
-                        ) : null}
-
-                        {previewCard.interaction?.type === "dino-runner" ? <AutoDino /> : null}
-                        {previewCard.interaction?.type === "obsidian-graph" ? (
-                          <ObsidianGraph />
-                        ) : null}
-                        {previewCard.interaction?.type === "benchmark-chart" ? (
-                          <BenchmarkChart />
-                        ) : null}
-                        {previewCard.interaction?.type === "favicon-bloat" ? (
-                          <FaviconBloat key={`preview-favicon-${previewCard.id}-${previewCycle}`} />
-                        ) : null}
-                        {previewCard.interaction?.type === "dvd-layout" ? <DvdLayout /> : null}
-                        {previewCard.interaction?.type === "meditation-timer" ? (
-                          <MeditationTimer
-                            key={`preview-meditation-${previewCard.id}-${previewCycle}`}
-                            durationMs={previewCard.durationMs ?? DEFAULT_CARD_DURATION_MS}
-                          />
-                        ) : null}
-                        {previewCard.interaction?.type === "fake-diff" ? (
-                          <FakeAgentsDiff />
-                        ) : null}
-                        {previewCard.interaction?.type === "tenor-embed" ? (
-                          <TenorEmbed
-                            embed={previewCard.interaction.embed}
-                            maxWidth={previewCard.interaction.maxWidth}
-                          />
-                        ) : null}
-                        {previewCard.interaction?.type === "fake-captcha" ? (
-                          <FakeCaptcha
-                            key={`preview-captcha-${previewCard.id}-${previewCycle}`}
-                            autoLoop
-                          />
-                        ) : null}
-
-                        {previewStage === "final" &&
-                        previewCard.interaction?.type === "anthropic-key" ? (
-                          <AnthropicKeyTrap
-                            key={`preview-trap-${previewCard.id}`}
-                            placeholder={previewCard.interaction.placeholder}
-                            invalidMessage={previewCard.interaction.invalidMessage}
-                            successMessage={previewCard.interaction.successMessage}
-                          />
-                        ) : previewStage === "final" &&
-                          previewCard.interaction?.type === "dodge-code-link" ? (
-                          <DodgingCodeLinkTrap
-                            key={`preview-dodge-${previewCard.id}`}
-                            buttonLabel={previewCard.interaction.buttonLabel}
-                            successMessage={previewCard.interaction.successMessage}
-                          />
-                        ) : previewStage === "final" &&
-                          previewCard.interaction?.type === "zip-bomb" ? (
-                          <ZipBombTrap
-                            key={`preview-zip-${previewCard.id}-${previewCycle}`}
-                            fileName={previewCard.interaction.fileName}
-                            fileSize={previewCard.interaction.fileSize}
-                          />
-                        ) : null}
-
-                        {previewStage === "final" ||
-                        previewCard.interaction?.type === "fake-captcha" ? null : (
-                          <LoadingBar
-                            loadingKey={`preview-${previewStage}-${previewCard.id}-${previewCycle}`}
-                            duration={DEFAULT_CARD_DURATION_MS / 1000}
+                          <BuildCardView
+                            card={previewCard as BuildCard}
+                            header={getPreviewHeader(
+                              previewStage,
+                              index,
+                              getVariantCount("middle"),
+                            )}
+                            playToken={`preview-${previewStage}-${previewCard.id}-${previewCycle}`}
+                            autoLoopCaptcha
                           />
                         )}
                       </div>
@@ -442,42 +368,13 @@ export function ShipNothing() {
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.08, ease: "linear" }}
                           >
-                            <div className="flex items-center justify-between gap-4">
-                              <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
-                                final result
-                              </p>
-                              <div className="h-2 w-2 bg-[var(--accent)]" />
-                            </div>
-
-                            <p className="mt-6 max-w-xl whitespace-pre-line text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
-                              {session.finalCard.title}
-                            </p>
-                            {session.finalCard.body ? (
-                              <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
-                                {session.finalCard.body}
-                              </p>
-                            ) : null}
-
-                            {finalInteraction?.type === "anthropic-key" ? (
-                              <AnthropicKeyTrap
-                                key={`final-trap-${session.finalCard.id}`}
-                                placeholder={finalInteraction.placeholder}
-                                invalidMessage={finalInteraction.invalidMessage}
-                                successMessage={finalInteraction.successMessage}
-                              />
-                            ) : finalInteraction?.type === "dodge-code-link" ? (
-                              <DodgingCodeLinkTrap
-                                key={`final-dodge-${session.finalCard.id}`}
-                                buttonLabel={finalInteraction.buttonLabel}
-                                successMessage={finalInteraction.successMessage}
-                              />
-                            ) : finalInteraction?.type === "zip-bomb" ? (
-                              <ZipBombTrap
-                                key={`final-zip-${session.finalCard.id}`}
-                                fileName={finalInteraction.fileName}
-                                fileSize={finalInteraction.fileSize}
-                              />
-                            ) : null}
+                            <FinalCardView
+                              card={{
+                                ...session.finalCard,
+                                interaction: finalInteraction,
+                              }}
+                              playToken={`final-${session.finalCard.id}`}
+                            />
                           </motion.div>
                         ) : activeStep ? (
                           <motion.div
@@ -487,75 +384,12 @@ export function ShipNothing() {
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.08, ease: "linear" }}
                           >
-                            <div className="flex items-center justify-between gap-4">
-                              <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
-                                {activeHeader}
-                              </p>
-                              {activeStep.interaction?.type === "fake-captcha" ? null : (
-                                <LoadingDots />
-                              )}
-                            </div>
-
-                            {activeStep.interaction?.type === "ugly-gradients" ? (
-                              <GradientTitle>{activeStep.title}</GradientTitle>
-                            ) : (
-                              <p className={getCardTitleClassName(activeStep.interaction?.type)}>
-                                {activeStep.title}
-                              </p>
-                            )}
-                            {activeStep.body ? (
-                              activeStep.interaction?.type === "ugly-gradients" ? (
-                                <GradientBody>{activeStep.body}</GradientBody>
-                              ) : (
-                                <p className={getCardBodyClassName(activeStep.interaction?.type)}>
-                                  {activeStep.body}
-                                </p>
-                              )
-                            ) : null}
-
-                            {activeStep.interaction?.type === "dino-runner" ? (
-                              <AutoDino />
-                            ) : null}
-                            {activeStep.interaction?.type === "obsidian-graph" ? (
-                              <ObsidianGraph />
-                            ) : null}
-                            {activeStep.interaction?.type === "benchmark-chart" ? (
-                              <BenchmarkChart />
-                            ) : null}
-                            {activeStep.interaction?.type === "favicon-bloat" ? (
-                              <FaviconBloat />
-                            ) : null}
-                            {activeStep.interaction?.type === "dvd-layout" ? (
-                              <DvdLayout />
-                            ) : null}
-                            {activeStep.interaction?.type === "meditation-timer" ? (
-                              <MeditationTimer
-                                key={`active-meditation-${activeStep.id}`}
-                                durationMs={activeStep.durationMs}
-                              />
-                            ) : null}
-                            {activeStep.interaction?.type === "fake-diff" ? (
-                              <FakeAgentsDiff />
-                            ) : null}
-                            {activeStep.interaction?.type === "tenor-embed" ? (
-                              <TenorEmbed
-                                embed={activeStep.interaction.embed}
-                                maxWidth={activeStep.interaction.maxWidth}
-                              />
-                            ) : null}
-                            {activeStep.interaction?.type === "fake-captcha" ? (
-                              <FakeCaptcha
-                                key={`active-captcha-${activeStep.id}`}
-                                onVerified={() => handleActionStepResolved(activeStep.id)}
-                              />
-                            ) : null}
-
-                            {activeStep.interaction?.type === "fake-captcha" ? null : (
-                              <LoadingBar
-                                loadingKey={activeStep.id}
-                                duration={Math.max(activeStep.durationMs / 1000, 0.75)}
-                              />
-                            )}
+                            <BuildCardView
+                              card={activeStep}
+                              header={activeHeader}
+                              playToken={activeStep.id}
+                              onActionResolved={() => handleActionStepResolved(activeStep.id)}
+                            />
                           </motion.div>
                         ) : null}
                       </AnimatePresence>
@@ -690,6 +524,137 @@ const UGLY_BODY_STYLE: CSSProperties = {
   color: "transparent",
 };
 
+function BuildCardView({
+  card,
+  header,
+  playToken,
+  onActionResolved,
+  autoLoopCaptcha = false,
+}: {
+  card: BuildCard;
+  header: string;
+  playToken: string;
+  onActionResolved?: () => void;
+  autoLoopCaptcha?: boolean;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4">
+        <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
+          {header}
+        </p>
+        {card.interaction?.type === "fake-captcha" ? null : (
+          <LoadingDots playToken={playToken} />
+        )}
+      </div>
+
+      {card.interaction?.type === "ugly-gradients" ? (
+        <GradientTitle>{card.title}</GradientTitle>
+      ) : (
+        <p className={getCardTitleClassName(card.interaction?.type)}>{card.title}</p>
+      )}
+      {card.body ? (
+        card.interaction?.type === "ugly-gradients" ? (
+          <GradientBody>{card.body}</GradientBody>
+        ) : (
+          <p className={getCardBodyClassName(card.interaction?.type)}>{card.body}</p>
+        )
+      ) : null}
+
+      {card.interaction?.type === "dino-runner" ? <AutoDino /> : null}
+      {card.interaction?.type === "obsidian-graph" ? <ObsidianGraph /> : null}
+      {card.interaction?.type === "benchmark-chart" ? (
+        <BenchmarkChart playToken={playToken} />
+      ) : null}
+      {card.interaction?.type === "favicon-bloat" ? (
+        <FaviconBloat playToken={playToken} />
+      ) : null}
+      {card.interaction?.type === "dvd-layout" ? <DvdLayout /> : null}
+      {card.interaction?.type === "meditation-timer" ? (
+        <MeditationTimer
+          key={`meditation-${playToken}`}
+          durationMs={card.durationMs}
+        />
+      ) : null}
+      {card.interaction?.type === "fake-diff" ? <FakeAgentsDiff /> : null}
+      {card.interaction?.type === "tenor-embed" ? (
+        <TenorEmbed
+          embed={card.interaction.embed}
+          maxWidth={card.interaction.maxWidth}
+        />
+      ) : null}
+      {card.interaction?.type === "fake-captcha" ? (
+        <FakeCaptcha
+          key={`captcha-${playToken}`}
+          onVerified={onActionResolved}
+          autoLoop={autoLoopCaptcha}
+        />
+      ) : null}
+
+      {card.interaction?.type === "fake-captcha" ? null : (
+        <LoadingBar
+          playToken={playToken}
+          duration={Math.max(card.durationMs / 1000, 0.75)}
+        />
+      )}
+    </>
+  );
+}
+
+function FinalCardView({
+  card,
+  playToken,
+}: {
+  card: {
+    title: string;
+    body?: string;
+    interaction?: FinalCardInteraction;
+    id: string;
+  };
+  playToken: string;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4">
+        <p className="terminal-text text-[11px] uppercase tracking-[0.18em] text-white/34">
+          final result
+        </p>
+        <div className="h-2 w-2 bg-[var(--accent)]" />
+      </div>
+
+      <p className="mt-6 max-w-xl whitespace-pre-line text-2xl font-medium tracking-[-0.04em] text-white sm:text-[2rem]">
+        {card.title}
+      </p>
+      {card.body ? (
+        <p className="terminal-text mt-3 max-w-lg text-sm leading-7 text-white/46 sm:text-[15px]">
+          {card.body}
+        </p>
+      ) : null}
+
+      {card.interaction?.type === "anthropic-key" ? (
+        <AnthropicKeyTrap
+          key={`trap-${playToken}`}
+          placeholder={card.interaction.placeholder}
+          invalidMessage={card.interaction.invalidMessage}
+          successMessage={card.interaction.successMessage}
+        />
+      ) : card.interaction?.type === "dodge-code-link" ? (
+        <DodgingCodeLinkTrap
+          key={`dodge-${playToken}`}
+          buttonLabel={card.interaction.buttonLabel}
+          successMessage={card.interaction.successMessage}
+        />
+      ) : card.interaction?.type === "zip-bomb" ? (
+        <ZipBombTrap
+          key={`zip-${playToken}`}
+          fileName={card.interaction.fileName}
+          fileSize={card.interaction.fileSize}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function FakeAgentsDiff() {
   const lines = [
     { number: 54542, content: "## Core directives" },
@@ -753,15 +718,31 @@ function ObsidianGraph() {
   );
 }
 
-function BenchmarkChart() {
+function BenchmarkChart({ playToken }: { playToken: string }) {
+  const isPlaying = useDeferredPlay(playToken);
+
   return (
     <div className="mt-5 space-y-3">
-      {BENCHMARK_CHART_ROWS.map((row) => (
+      {BENCHMARK_CHART_ROWS.map((row, index) => (
         <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_44px] items-center gap-4">
           <div className="space-y-1">
             <div className="terminal-text text-xs text-white/44">{row.label}</div>
             <div className="h-2 bg-white/8">
-              <div className={`h-full ${row.tone}`} style={{ width: `${row.value}%` }} />
+              <motion.div
+                initial={false}
+                animate={{ scaleX: isPlaying ? 1 : 0 }}
+                transition={
+                  isPlaying
+                    ? {
+                        duration: BENCHMARK_ROW_FILL_DURATION_S,
+                        delay: getBenchmarkRowDelay(index, BENCHMARK_CHART_ROWS.length),
+                        ease: "easeOut",
+                      }
+                    : { duration: 0 }
+                }
+                style={{ width: `${row.value}%`, originX: 0 }}
+                className={`h-full ${row.tone}`}
+              />
             </div>
           </div>
           <div className="terminal-text text-right text-xs text-white/44">{row.value}</div>
@@ -771,13 +752,15 @@ function BenchmarkChart() {
   );
 }
 
-function FaviconBloat() {
+function FaviconBloat({ playToken }: { playToken: string }) {
+  const isPlaying = useDeferredPlay(playToken);
+
   return (
     <div className="mt-5 flex w-full justify-center overflow-hidden">
       <motion.div
-        initial={{ width: "14%" }}
-        animate={{ width: "100%" }}
-        transition={{ duration: 3.2, ease: "easeOut" }}
+        initial={false}
+        animate={{ width: isPlaying ? "100%" : "14%" }}
+        transition={isPlaying ? { duration: 3.2, ease: "easeOut" } : { duration: 0 }}
         className="max-w-full"
       >
         <Image
@@ -988,19 +971,26 @@ function formatCountdown(durationMs: number) {
     .padStart(2, "0")}.${tenths}`;
 }
 
-function LoadingDots() {
+function LoadingDots({ playToken }: { playToken: string }) {
+  const isPlaying = useDeferredPlay(playToken);
+
   return (
     <div className="flex items-center gap-1.5">
       {[0, 1, 2].map((dot) => (
         <motion.span
           key={dot}
-          animate={{ opacity: [0.25, 1, 0.25] }}
-          transition={{
-            duration: 0.9,
-            repeat: Number.POSITIVE_INFINITY,
-            delay: dot * 0.12,
-            ease: "easeInOut",
-          }}
+          initial={false}
+          animate={isPlaying ? { opacity: [0.25, 1, 0.25] } : { opacity: 0.25 }}
+          transition={
+            isPlaying
+              ? {
+                  duration: 0.9,
+                  repeat: Number.POSITIVE_INFINITY,
+                  delay: dot * 0.12,
+                  ease: "easeInOut",
+                }
+              : { duration: 0 }
+          }
           className="h-1.5 w-1.5 bg-[var(--accent)]"
         />
       ))}
@@ -1119,27 +1109,47 @@ function DodgingCodeLinkTrap({
 }
 
 function LoadingBar({
-  loadingKey,
+  playToken,
   duration,
 }: {
-  loadingKey: string;
+  playToken: string;
   duration: number;
 }) {
+  const isPlaying = useDeferredPlay(playToken);
+
   return (
     <div className="mt-7 h-1 overflow-hidden bg-white/8">
       <motion.div
-        key={loadingKey}
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{
-          duration,
-          ease: "linear",
-        }}
+        initial={false}
+        animate={{ scaleX: isPlaying ? 1 : 0 }}
+        transition={isPlaying ? { duration, ease: "linear" } : { duration: 0 }}
         style={{ originX: 0 }}
         className="h-full w-full bg-[var(--accent)]"
       />
     </div>
   );
+}
+
+function useDeferredPlay(playToken: string) {
+  const [armedToken, setArmedToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    let firstFrame = 0;
+    let secondFrame = 0;
+
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        setArmedToken(playToken);
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [playToken]);
+
+  return armedToken === playToken;
 }
 
 function getActiveHeader(activeIndex: number, sequenceLength: number) {

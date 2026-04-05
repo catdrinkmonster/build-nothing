@@ -10,3 +10,10 @@ export const BENCHMARK_CHART_ROWS: BenchmarkRow[] = [
   { label: "travel route optimizer", value: 11, tone: "bg-white/32" },
   { label: "thing that exists but for xyz", value: 6, tone: "bg-white/24" },
 ];
+
+export const BENCHMARK_ROW_FILL_DURATION_S = 1.12;
+export const BENCHMARK_ROW_STAGGER_S = 1.12;
+
+export function getBenchmarkRowDelay(index: number, rowCount: number) {
+  return Math.max(rowCount - index - 1, 0) * BENCHMARK_ROW_STAGGER_S;
+}
