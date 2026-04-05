@@ -62,7 +62,7 @@ describe("variant pools", () => {
       (card) => card.key === "wikipedia-banner",
     );
 
-    expect(variant?.title).toBe("Crawling Wikipedia on how to build this thing");
+    expect(variant?.title).toBe("Reading Wikipedia on how to build this shit");
   });
 
   it("includes the Obsidian-mapping initial variant", () => {
@@ -90,7 +90,7 @@ describe("variant pools", () => {
       (card) => card.interaction?.type === "dino-runner",
     );
 
-    expect(variant?.title).toBe("Hold up, internet down.");
+    expect(variant?.title).toBe("Hold up, internet down");
   });
 
   it("exposes the ugly-gradients interaction on the dedicated middle variant", () => {
@@ -182,7 +182,7 @@ describe("variant pools", () => {
       (card) => card.interaction?.type === "dodge-code-link",
     );
 
-    expect(variant?.title).toBe("It's done! Have a look:");
+    expect(variant?.title).toBe("The app has been built! Have a look:");
     expect(variant?.interaction?.successMessage).toContain("go back to twitter");
   });
 
