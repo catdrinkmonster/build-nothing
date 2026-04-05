@@ -4,7 +4,7 @@ import type {
   VariantRotationState,
 } from "./build-nothing-types";
 
-export const DEFAULT_CARD_DURATION_MS = 8000;
+export const DEFAULT_CARD_DURATION_MS = 7000;
 
 export const DEFAULT_IDEA =
   "an ai startup for people too busy to have a personality";
