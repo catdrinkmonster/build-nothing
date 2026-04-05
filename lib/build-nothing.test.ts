@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_CARD_DURATION_MS,
   DEFAULT_IDEA,
   EMPTY_SEEN_VARIANT_HISTORY,
   FINAL_CARD_VARIANTS,
@@ -28,15 +29,15 @@ describe("normalizePrompt", () => {
 
 describe("variant pools", () => {
   it("reports the configured variant counts for each stage", () => {
-    expect(getVariantCount("initial")).toBe(4);
-    expect(getVariantCount("middle")).toBe(17);
-    expect(getVariantCount("final")).toBe(6);
+    expect(getVariantCount("initial")).toBe(6);
+    expect(getVariantCount("middle")).toBe(20);
+    expect(getVariantCount("final")).toBe(7);
   });
 
   it("returns the same preview regardless of index wrapping", () => {
-    expect(getVariantPreview("initial", 0)).toEqual(getVariantPreview("initial", 4));
-    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 17));
-    expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 12));
+    expect(getVariantPreview("initial", 0)).toEqual(getVariantPreview("initial", 6));
+    expect(getVariantPreview("middle", 0)).toEqual(getVariantPreview("middle", 20));
+    expect(getVariantPreview("final", 0)).toEqual(getVariantPreview("final", 14));
   });
 
   it("exposes the tenor embed interaction on the planning initial variant", () => {
@@ -44,7 +45,7 @@ describe("variant pools", () => {
       (card) => card.interaction?.type === "tenor-embed",
     );
 
-    expect(variant?.title).toBe("Planning the project in unnecessary detail");
+    expect(variant?.title).toBe("Planning the project in absurd detail");
   });
 
   it("exposes the fake captcha interaction on the dedicated initial variant", () => {
@@ -62,6 +63,24 @@ describe("variant pools", () => {
     );
 
     expect(variant?.title).toBe("Checking Wikipedia how to build this thing");
+  });
+
+  it("includes the Obsidian-mapping initial variant", () => {
+    const variant = INITIAL_CARD_VARIANTS.find(
+      (card) => card.key === "obsidian-vault",
+    );
+
+    expect(variant?.title).toBe("Mapping out the idea in Obsidian first");
+    expect(variant?.body).toBe("Need to create 7 million nodes for the other two Obsidian users.");
+    expect(variant?.interaction?.type).toBe("obsidian-graph");
+  });
+
+  it("exposes the benchmark chart interaction on the dedicated initial variant", () => {
+    const variant = INITIAL_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "benchmark-chart",
+    );
+
+    expect(variant?.title).toBe("Benchmarking your idea against complete garbage");
   });
 
   it("exposes the dino-runner interaction on the dedicated middle variant", () => {
@@ -94,6 +113,14 @@ describe("variant pools", () => {
     );
 
     expect(variant?.title).toBe("Making the text move around a DVD logo");
+  });
+
+  it("exposes the favicon bloat interaction on the dedicated middle variant", () => {
+    const variant = MIDDLE_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "favicon-bloat",
+    );
+
+    expect(variant?.title).toBe("Making the logo slightly bigger");
   });
 
   it("exposes the fake-diff interaction on the dedicated middle variant", () => {
@@ -132,6 +159,22 @@ describe("variant pools", () => {
     expect(variant?.title).toBe("Writing my own compiler in C++");
   });
 
+  it("includes the YC-speedrun variant", () => {
+    const variant = MIDDLE_CARD_VARIANTS.find(
+      (card) => card.key === "yc-speedrun",
+    );
+
+    expect(variant?.title).toBe("Watching a YC video at 1.75x speed");
+  });
+
+  it("includes the waitlist variant", () => {
+    const variant = MIDDLE_CARD_VARIANTS.find(
+      (card) => card.key === "waitlist-mom",
+    );
+
+    expect(variant?.body).toBe("Sending your mom an invite to artificially inflate demand.");
+  });
+
   it("keeps the whole-project deletion joke explicit", () => {
     expect(FINAL_CARD_VARIANTS[1]?.body).toContain(
       "rm -rf on the entire codebase",
@@ -145,6 +188,15 @@ describe("variant pools", () => {
 
     expect(variant?.title).toBe("It's done! Have a look:");
     expect(variant?.interaction?.successMessage).toContain("go back to twitter");
+  });
+
+  it("exposes the zip-bomb interaction on the dedicated final variant", () => {
+    const variant = FINAL_CARD_VARIANTS.find(
+      (card) => card.interaction?.type === "zip-bomb",
+    );
+
+    expect(variant?.title).toBe("The download is ready");
+    expect(variant?.interaction?.fileSize).toBe("182 KB");
   });
 });
 
@@ -181,8 +233,7 @@ describe("createBuildSession", () => {
     expect(
       INITIAL_CARD_VARIANTS.some((variant) => variant.body === session.initialCard.body),
     ).toBe(true);
-    expect(session.initialCard.durationMs).toBeGreaterThanOrEqual(5000);
-    expect(session.initialCard.durationMs).toBeLessThanOrEqual(10000);
+    expect(session.initialCard.durationMs).toBe(DEFAULT_CARD_DURATION_MS);
 
     expect(session.middleCards.length).toBeGreaterThanOrEqual(3);
     expect(session.middleCards.length).toBeLessThanOrEqual(5);
@@ -196,7 +247,7 @@ describe("createBuildSession", () => {
     ).toBe(true);
     expect(
       session.middleCards.every(
-        (card) => card.durationMs >= 5000 && card.durationMs <= 10000,
+        (card) => card.durationMs === DEFAULT_CARD_DURATION_MS,
       ),
     ).toBe(true);
     expect(
@@ -221,10 +272,17 @@ describe("createBuildSession", () => {
   it("biases initial selection toward unseen variants", () => {
     const session = createBuildSession("same prompt", {
       ...EMPTY_SEEN_VARIANT_HISTORY,
-      initial: ["claude-vibecode", "planning-kid", "fake-captcha"],
+      initial: [
+        "claude-vibecode",
+        "planning-kid",
+        "fake-captcha",
+        "wikipedia-banner",
+      ],
     });
 
-    expect(session.initialCard.variantKey).toBe("wikipedia-banner");
+    expect(["obsidian-vault", "benchmark-garbage"]).toContain(
+      session.initialCard.variantKey,
+    );
   });
 
   it("forces the dog ending when the dog card is selected last", () => {

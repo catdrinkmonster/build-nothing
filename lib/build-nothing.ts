@@ -23,6 +23,15 @@ export type BuildCardInteraction =
     }
   | {
       type: "dvd-layout";
+    }
+  | {
+      type: "benchmark-chart";
+    }
+  | {
+      type: "obsidian-graph";
+    }
+  | {
+      type: "favicon-bloat";
     };
 
 export type FinalCardInteraction =
@@ -36,6 +45,11 @@ export type FinalCardInteraction =
       type: "dodge-code-link";
       buttonLabel: string;
       successMessage: string;
+    }
+  | {
+      type: "zip-bomb";
+      fileName: string;
+      fileSize: string;
     };
 
 export type BuildCard = {
@@ -92,8 +106,7 @@ type FinalCardTemplate = BaseCardTemplate & {
 
 const MIN_MIDDLE_CARD_COUNT = 3;
 const MAX_MIDDLE_CARD_COUNT = 5;
-const MIN_CARD_DURATION_MS = 5000;
-const MAX_CARD_DURATION_MS = 10000;
+export const DEFAULT_CARD_DURATION_MS = 10000;
 
 export const DEFAULT_IDEA =
   "an ai startup for people too busy to have a personality";
@@ -109,13 +122,13 @@ export const INITIAL_CARD_VARIANTS: CardTemplate[] = [
     key: "claude-vibecode",
     eyebrow: "initial review",
     title: "Asking Claude how to vibecode an app",
-    body: "Never mind. I accidentally said 'hello', so I hit my limits. Asking ChatGPT instead.",
+    body: "Never mind. I accidentally said 'hello'. I gotta wait for my rate limits to reset. Asking ChatGPT instead.",
   },
   {
     key: "planning-kid",
     eyebrow: "initial review",
-    title: "Planning the project in unnecessary detail",
-    body: "This might take 6 or 7 minutes.",
+    title: "Planning the project in absurd detail",
+    body: "This might take  6   or  7   minutes.",
     interaction: {
       type: "tenor-embed",
       embed: "planning",
@@ -136,6 +149,24 @@ export const INITIAL_CARD_VARIANTS: CardTemplate[] = [
     eyebrow: "initial review",
     title: "Checking Wikipedia how to build this thing",
     body: "Do you have 3 dollars by chance? I can't read anything with this massive banner in my face.",
+  },
+  {
+    key: "obsidian-vault",
+    eyebrow: "initial review",
+    title: "Mapping out the idea in Obsidian first",
+    body: "Need to create 7 million nodes for the other two Obsidian users.",
+    interaction: {
+      type: "obsidian-graph",
+    },
+  },
+  {
+    key: "benchmark-garbage",
+    eyebrow: "initial review",
+    title: "Benchmarking your idea against complete garbage",
+    body: "Encouraging results so far.",
+    interaction: {
+      type: "benchmark-chart",
+    },
   },
 ];
 
@@ -165,6 +196,12 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
     eyebrow: "workstream",
     title: "Watching a MrBeast video",
     body: "Just trying to manifest some revenue.",
+  },
+  {
+    key: "yc-speedrun",
+    eyebrow: "workstream",
+    title: "Watching a YC video at 1.75x speed",
+    body: "Trying to absorb alpha-guru-founder-larp without taking any of the advice.",
   },
   {
     key: "token-bomb",
@@ -209,6 +246,21 @@ export const MIDDLE_CARD_VARIANTS: CardTemplate[] = [
     eyebrow: "workstream",
     title: "Writing my own compiler in C++",
     body: "These RAM sticks ain't ready for us.",
+  },
+  {
+    key: "favicon-bloat",
+    eyebrow: "workstream",
+    title: "Making the logo slightly bigger",
+    body: "This should carry the next sprint.",
+    interaction: {
+      type: "favicon-bloat",
+    },
+  },
+  {
+    key: "waitlist-mom",
+    eyebrow: "workstream",
+    title: "Building the waitlist",
+    body: "Sending your mom an invite to artificially inflate demand.",
   },
   {
     key: "dvd-layout",
@@ -319,6 +371,17 @@ export const FINAL_CARD_VARIANTS: FinalCardTemplate[] = [
     body: "The dog pissed on my 5 MacBook minis. I'm going to have to cancel this project. :(",
     specialOnly: true,
   },
+  {
+    key: "zip-bomb",
+    eyebrow: "final result",
+    title: "The download is ready",
+    body: "Totally normal archive. Nothing to worry about.",
+    interaction: {
+      type: "zip-bomb",
+      fileName: "source-code.zip",
+      fileSize: "182 KB",
+    },
+  },
 ];
 
 export function normalizePrompt(input: string): string {
@@ -353,7 +416,7 @@ export function getVariantPreview(stage: CardStage, index: number) {
     title: template.title,
     body: template.body,
     interaction: template.interaction,
-    durationMs: 7600,
+    durationMs: DEFAULT_CARD_DURATION_MS,
   } satisfies BuildCard;
 }
 
@@ -368,7 +431,7 @@ export function createBuildSession(
 
   return {
     id: seed.toString(36),
-    initialCard: createTimedCard("initial", initialIndex, durationFor(seed, 0)),
+    initialCard: createTimedCard("initial", initialIndex, durationFor()),
     middleCards: middleSelection.cards,
     finalCard: createFinalCard(seed, seenHistory, middleSelection.forcedFinalKey),
   };
@@ -441,10 +504,8 @@ function createRandom(seed: number) {
   };
 }
 
-function durationFor(seed: number, index: number) {
-  const spread = MAX_CARD_DURATION_MS - MIN_CARD_DURATION_MS;
-  const chunk = (seed >> ((index % 6) * 5)) & 31;
-  return MIN_CARD_DURATION_MS + Math.round((chunk / 31) * spread);
+function durationFor() {
+  return DEFAULT_CARD_DURATION_MS;
 }
 
 function createTimedCard(
@@ -547,7 +608,7 @@ function selectMiddleCards(seed: number, seenHistory: SeenVariantHistory) {
       createTimedCard(
         "middle",
         selectedIndex,
-        durationFor(seed, cards.length + 1),
+        durationFor(),
       ),
     );
   }

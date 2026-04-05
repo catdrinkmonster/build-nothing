@@ -1,14 +1,22 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { AutoDino } from "@/components/auto-dino";
 import { DvdLayout } from "@/components/dvd-layout";
 import { TenorEmbed } from "@/components/tenor-embed";
+import { BENCHMARK_CHART_ROWS } from "@/lib/benchmark-chart";
+import {
+  OBSIDIAN_GRAPH_EDGES,
+  OBSIDIAN_GRAPH_NODES,
+  OBSIDIAN_GRAPH_OFFSET,
+} from "@/lib/obsidian-graph";
 import {
   DEFAULT_IDEA,
+  DEFAULT_CARD_DURATION_MS,
   EMPTY_SEEN_VARIANT_HISTORY,
   createBuildSession,
   getVariantCount,
@@ -33,6 +41,7 @@ export function ShipNothing() {
   const [historyCount, setHistoryCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [previewStage, setPreviewStage] = useState<CardStage>("initial");
+  const [previewCycle, setPreviewCycle] = useState(0);
   const [resolvedActionStepIds, setResolvedActionStepIds] = useState<string[]>([]);
   const [seenHistory, setSeenHistory] = useState<SeenVariantHistory>(
     loadSeenVariantHistory,
@@ -67,6 +76,18 @@ export function ShipNothing() {
       JSON.stringify(seenHistory),
     );
   }, [seenHistory]);
+
+  useEffect(() => {
+    if (!devMode) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setPreviewCycle((current) => current + 1);
+    }, DEFAULT_CARD_DURATION_MS);
+
+    return () => window.clearInterval(timer);
+  }, [devMode]);
 
   useEffect(() => {
     if (!session || !activeStep || isComplete) {
@@ -289,11 +310,20 @@ export function ShipNothing() {
                         ) : null}
 
                         {previewCard.interaction?.type === "dino-runner" ? <AutoDino /> : null}
+                        {previewCard.interaction?.type === "obsidian-graph" ? (
+                          <ObsidianGraph />
+                        ) : null}
+                        {previewCard.interaction?.type === "benchmark-chart" ? (
+                          <BenchmarkChart />
+                        ) : null}
+                        {previewCard.interaction?.type === "favicon-bloat" ? (
+                          <FaviconBloat key={`preview-favicon-${previewCard.id}-${previewCycle}`} />
+                        ) : null}
                         {previewCard.interaction?.type === "dvd-layout" ? <DvdLayout /> : null}
                         {previewCard.interaction?.type === "meditation-timer" ? (
                           <MeditationTimer
-                            key={`preview-meditation-${previewCard.id}`}
-                            durationMs={previewCard.durationMs ?? 7600}
+                            key={`preview-meditation-${previewCard.id}-${previewCycle}`}
+                            durationMs={previewCard.durationMs ?? DEFAULT_CARD_DURATION_MS}
                           />
                         ) : null}
                         {previewCard.interaction?.type === "fake-diff" ? (
@@ -306,7 +336,10 @@ export function ShipNothing() {
                           />
                         ) : null}
                         {previewCard.interaction?.type === "fake-captcha" ? (
-                          <FakeCaptcha key={`preview-captcha-${previewCard.id}`} />
+                          <FakeCaptcha
+                            key={`preview-captcha-${previewCard.id}-${previewCycle}`}
+                            autoLoop
+                          />
                         ) : null}
 
                         {previewStage === "final" &&
@@ -324,13 +357,20 @@ export function ShipNothing() {
                             buttonLabel={previewCard.interaction.buttonLabel}
                             successMessage={previewCard.interaction.successMessage}
                           />
+                        ) : previewStage === "final" &&
+                          previewCard.interaction?.type === "zip-bomb" ? (
+                          <ZipBombTrap
+                            key={`preview-zip-${previewCard.id}-${previewCycle}`}
+                            fileName={previewCard.interaction.fileName}
+                            fileSize={previewCard.interaction.fileSize}
+                          />
                         ) : null}
 
                         {previewStage === "final" ||
                         previewCard.interaction?.type === "fake-captcha" ? null : (
                           <LoadingBar
-                            loadingKey={`preview-${previewStage}-${previewCard.id}`}
-                            duration={1.8}
+                            loadingKey={`preview-${previewStage}-${previewCard.id}-${previewCycle}`}
+                            duration={DEFAULT_CARD_DURATION_MS / 1000}
                           />
                         )}
                       </div>
@@ -420,6 +460,12 @@ export function ShipNothing() {
                                 buttonLabel={finalInteraction.buttonLabel}
                                 successMessage={finalInteraction.successMessage}
                               />
+                            ) : finalInteraction?.type === "zip-bomb" ? (
+                              <ZipBombTrap
+                                key={`final-zip-${session.finalCard.id}`}
+                                fileName={finalInteraction.fileName}
+                                fileSize={finalInteraction.fileSize}
+                              />
                             ) : null}
                           </motion.div>
                         ) : activeStep ? (
@@ -458,6 +504,15 @@ export function ShipNothing() {
 
                             {activeStep.interaction?.type === "dino-runner" ? (
                               <AutoDino />
+                            ) : null}
+                            {activeStep.interaction?.type === "obsidian-graph" ? (
+                              <ObsidianGraph />
+                            ) : null}
+                            {activeStep.interaction?.type === "benchmark-chart" ? (
+                              <BenchmarkChart />
+                            ) : null}
+                            {activeStep.interaction?.type === "favicon-bloat" ? (
+                              <FaviconBloat />
                             ) : null}
                             {activeStep.interaction?.type === "dvd-layout" ? (
                               <DvdLayout />
@@ -637,6 +692,79 @@ function FakeAgentsDiff() {
   );
 }
 
+function ObsidianGraph() {
+  return (
+    <div className="mt-5 h-[280px] w-full overflow-hidden bg-[var(--field)]">
+      <svg viewBox="0 0 100 100" className="h-full w-full">
+        <g transform={`translate(${OBSIDIAN_GRAPH_OFFSET.x} ${OBSIDIAN_GRAPH_OFFSET.y})`}>
+          {OBSIDIAN_GRAPH_EDGES.map(([x1, y1, x2, y2], index) => (
+            <line
+              key={`${x1}-${y1}-${x2}-${y2}-${index}`}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke="rgb(116, 116, 124)"
+              strokeWidth="0.28"
+            />
+          ))}
+          {OBSIDIAN_GRAPH_NODES.map((node, index) => (
+            <circle
+              key={`${node.left}-${node.top}-${index}`}
+              cx={node.left}
+              cy={node.top}
+              r={node.size}
+              fill={node.accent ? "var(--accent)" : "rgb(228, 228, 230)"}
+            />
+          ))}
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function BenchmarkChart() {
+  return (
+    <div className="mt-5 space-y-3">
+      {BENCHMARK_CHART_ROWS.map((row) => (
+        <div key={row.label} className="grid grid-cols-[minmax(0,1fr)_44px] items-center gap-4">
+          <div className="space-y-1">
+            <div className="terminal-text text-xs text-white/44">{row.label}</div>
+            <div className="h-2 bg-white/8">
+              <div className={`h-full ${row.tone}`} style={{ width: `${row.value}%` }} />
+            </div>
+          </div>
+          <div className="terminal-text text-right text-xs text-white/44">{row.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FaviconBloat() {
+  return (
+    <div className="mt-5 flex w-full justify-center overflow-hidden">
+      <motion.div
+        initial={{ width: "14%" }}
+        animate={{ width: "100%" }}
+        transition={{ duration: 3.2, ease: "easeOut" }}
+        className="max-w-full"
+      >
+        <Image
+          src="/favicon-96x96.avif"
+          alt=""
+          aria-hidden="true"
+          unoptimized
+          width={96}
+          height={96}
+          sizes="(min-width: 1024px) 720px, 100vw"
+          className="block h-auto w-full object-contain opacity-95"
+        />
+      </motion.div>
+    </div>
+  );
+}
+
 function MeditationTimer({ durationMs }: { durationMs: number }) {
   const [remainingMs, setRemainingMs] = useState(durationMs);
 
@@ -664,8 +792,26 @@ function MeditationTimer({ durationMs }: { durationMs: number }) {
   );
 }
 
-function FakeCaptcha({ onVerified }: { onVerified?: () => void }) {
+function FakeCaptcha({
+  onVerified,
+  autoLoop = false,
+}: {
+  onVerified?: () => void;
+  autoLoop?: boolean;
+}) {
   const [status, setStatus] = useState<"idle" | "loading" | "verified">("idle");
+
+  useEffect(() => {
+    if (!autoLoop || status !== "idle") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setStatus("loading");
+    }, 420);
+
+    return () => window.clearTimeout(timer);
+  }, [autoLoop, status]);
 
   useEffect(() => {
     if (status !== "loading") {
@@ -683,6 +829,18 @@ function FakeCaptcha({ onVerified }: { onVerified?: () => void }) {
 
     return () => window.clearTimeout(timer);
   }, [onVerified, status]);
+
+  useEffect(() => {
+    if (!autoLoop || status !== "verified") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setStatus("idle");
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [autoLoop, status]);
 
   function handleClick() {
     if (status !== "idle") {
@@ -721,6 +879,71 @@ function FakeCaptcha({ onVerified }: { onVerified?: () => void }) {
         </p>
       </div>
     </button>
+  );
+}
+
+function ZipBombTrap({
+  fileName,
+  fileSize,
+}: {
+  fileName: string;
+  fileSize: string;
+}) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!isDownloading) {
+      return;
+    }
+
+    const startedAt = Date.now();
+    const interval = window.setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const nextProgress = Math.min((elapsed / 2200) * 0.00001337, 0.00001337);
+      setProgress(nextProgress);
+    }, 70);
+
+    return () => window.clearInterval(interval);
+  }, [isDownloading]);
+
+  return (
+    <div className="mt-5 w-full">
+      <div className="w-full bg-[var(--panel-soft)]">
+        <div className="flex w-full items-center justify-between gap-4 px-4 py-3">
+          <div className="min-w-0">
+            <p className="terminal-text truncate text-sm text-white/84">{fileName}</p>
+            <p className="terminal-text text-xs text-white/34">{fileSize}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsDownloading(true)}
+            disabled={isDownloading}
+            className="terminal-text shrink-0 bg-[var(--field)] px-3 py-2 text-xs text-white/84 disabled:cursor-default disabled:text-white/44"
+          >
+            {isDownloading ? "Downloading" : "Download"}
+          </button>
+        </div>
+        {isDownloading ? (
+          <div className="space-y-3 px-4 pb-4 pt-2">
+            <div className="terminal-text flex w-full items-center justify-between gap-4 text-xs text-white/44">
+              <span>download progress</span>
+              <span>{progress.toFixed(8)}%</span>
+            </div>
+            <div className="h-2 w-full bg-white/8">
+              <div
+                className="h-full bg-[var(--accent)]"
+                style={{ width: `${Math.max((progress / 0.00001337) * 100, 0.8)}%` }}
+              />
+            </div>
+            <div className="terminal-text flex w-full items-center justify-between gap-4 text-xs text-white/44">
+              <span>free disk space required</span>
+              <span className="text-white/78">9.4 PB</span>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
