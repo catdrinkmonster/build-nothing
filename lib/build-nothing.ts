@@ -429,11 +429,12 @@ export function createBuildSession(
   const workingRotationState = cloneRotationState(rotationState);
   const initialIndex = selectInitialCardIndex(seed, workingRotationState);
   const middleSelection = selectMiddleCards(seed, workingRotationState);
+  const middleCards = ensureValidMiddleCardCount(middleSelection.cards);
 
   return {
     id: seed.toString(36),
     initialCard: createTimedCard("initial", initialIndex, durationFor()),
-    middleCards: middleSelection.cards,
+    middleCards,
     finalCard: createFinalCard(
       seed,
       workingRotationState,
@@ -579,9 +580,12 @@ function selectInitialCardIndex(
 
 function selectMiddleCards(seed: number, rotationState: VariantRotationState) {
   const cards: BuildCard[] = [];
+  const countRandom = createRandom(seed ^ 0x85ebca6b);
   const cardCount =
     MIN_MIDDLE_CARD_COUNT +
-    ((seed >> 9) % (MAX_MIDDLE_CARD_COUNT - MIN_MIDDLE_CARD_COUNT + 1));
+    Math.floor(
+      countRandom() * (MAX_MIDDLE_CARD_COUNT - MIN_MIDDLE_CARD_COUNT + 1),
+    );
   const random = createRandom(seed ^ 0x9e3779b9);
   const usedKeys = new Set<string>();
   let forcedFinalKey: string | undefined;
@@ -709,4 +713,17 @@ function advanceRotationKeys<T extends { key: string }>(
   return nextKeys.length > 0
     ? nextKeys
     : pool.map((variant) => variant.key);
+}
+
+function ensureValidMiddleCardCount(cards: BuildCard[]) {
+  if (
+    cards.length < MIN_MIDDLE_CARD_COUNT ||
+    cards.length > MAX_MIDDLE_CARD_COUNT
+  ) {
+    throw new Error(
+      `Invariant violated: expected ${MIN_MIDDLE_CARD_COUNT}-${MAX_MIDDLE_CARD_COUNT} middle cards, received ${cards.length}.`,
+    );
+  }
+
+  return cards;
 }

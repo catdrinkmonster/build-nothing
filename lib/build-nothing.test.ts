@@ -269,6 +269,15 @@ describe("createBuildSession", () => {
     ).toBe(true);
   });
 
+  it("always generates between three and five middle cards across many prompts", () => {
+    for (let index = 0; index < 250; index += 1) {
+      const session = createBuildSession(`count-range-${index}`, INITIAL_ROTATION_STATE);
+
+      expect(session.middleCards.length).toBeGreaterThanOrEqual(3);
+      expect(session.middleCards.length).toBeLessThanOrEqual(5);
+    }
+  });
+
   it("prefers the remaining initial rotation pool before reusing variants", () => {
     const session = createBuildSession("same prompt", {
       ...INITIAL_ROTATION_STATE,
