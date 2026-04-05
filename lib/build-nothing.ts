@@ -78,7 +78,7 @@ export type BuildSession = {
   finalCard: FinalCard;
 };
 
-export type SeenVariantHistory = {
+export type VariantRotationState = {
   initial: string[];
   middle: string[];
   final: string[];
@@ -110,12 +110,6 @@ export const DEFAULT_CARD_DURATION_MS = 10000;
 
 export const DEFAULT_IDEA =
   "an ai startup for people too busy to have a personality";
-
-export const EMPTY_SEEN_VARIANT_HISTORY: SeenVariantHistory = {
-  initial: [],
-  middle: [],
-  final: [],
-};
 
 export const INITIAL_CARD_VARIANTS: CardTemplate[] = [
   {
@@ -384,6 +378,12 @@ export const FINAL_CARD_VARIANTS: FinalCardTemplate[] = [
   },
 ];
 
+export const INITIAL_ROTATION_STATE: VariantRotationState = {
+  initial: INITIAL_CARD_VARIANTS.map((variant) => variant.key),
+  middle: MIDDLE_CARD_VARIANTS.map((variant) => variant.key),
+  final: FINAL_CARD_VARIANTS.map((variant) => variant.key),
+};
+
 export function normalizePrompt(input: string): string {
   const normalized = input.trim().replace(/\s+/g, " ");
   return normalized || DEFAULT_IDEA;
@@ -422,32 +422,40 @@ export function getVariantPreview(stage: CardStage, index: number) {
 
 export function createBuildSession(
   input: string,
-  seenHistory: SeenVariantHistory = EMPTY_SEEN_VARIANT_HISTORY,
+  rotationState: VariantRotationState = INITIAL_ROTATION_STATE,
 ): BuildSession {
   const prompt = normalizePrompt(input);
   const seed = hashString(prompt.toLowerCase());
-  const initialIndex = selectInitialCardIndex(seed, seenHistory);
-  const middleSelection = selectMiddleCards(seed, seenHistory);
+  const workingRotationState = cloneRotationState(rotationState);
+  const initialIndex = selectInitialCardIndex(seed, workingRotationState);
+  const middleSelection = selectMiddleCards(seed, workingRotationState);
 
   return {
     id: seed.toString(36),
     initialCard: createTimedCard("initial", initialIndex, durationFor()),
     middleCards: middleSelection.cards,
-    finalCard: createFinalCard(seed, seenHistory, middleSelection.forcedFinalKey),
+    finalCard: createFinalCard(
+      seed,
+      workingRotationState,
+      middleSelection.forcedFinalKey,
+    ),
   };
 }
 
-export function markSeenVariants(
-  current: SeenVariantHistory,
+export function advanceRotationState(
+  current: VariantRotationState,
   session: BuildSession,
-): SeenVariantHistory {
+): VariantRotationState {
+  let nextState = cloneRotationState(current);
+
+  nextState = consumeRotationKey("initial", nextState, session.initialCard.variantKey);
+  nextState = session.middleCards.reduce(
+    (state, card) => consumeRotationKey("middle", state, card.variantKey),
+    nextState,
+  );
+
   return {
-    initial: addUnique(current.initial, session.initialCard.variantKey),
-    middle: session.middleCards.reduce(
-      (seen, card) => addUnique(seen, card.variantKey),
-      current.middle,
-    ),
-    final: addUnique(current.final, session.finalCard.variantKey),
+    ...consumeRotationKey("final", nextState, session.finalCard.variantKey),
   };
 }
 
@@ -529,17 +537,18 @@ function createTimedCard(
 
 function createFinalCard(
   seed: number,
-  seenHistory: SeenVariantHistory,
+  rotationState: VariantRotationState,
   forcedFinalKey?: string,
 ): FinalCard {
   const availablePool = forcedFinalKey
     ? FINAL_CARD_VARIANTS.filter((variant) => variant.key === forcedFinalKey)
     : FINAL_CARD_VARIANTS.filter((variant) => !variant.specialOnly);
-  const template = pickBiasedVariant(
+  const { variant: template, nextKeys } = pickRotatingVariant(
     availablePool,
-    seenHistory.final,
+    rotationState.final,
     createRandom(seed ^ 0x45d9f3b),
   );
+  rotationState.final = nextKeys;
   const normalizedIndex = FINAL_CARD_VARIANTS.findIndex(
     (variant) => variant.key === template.key,
   );
@@ -554,17 +563,21 @@ function createFinalCard(
   };
 }
 
-function selectInitialCardIndex(seed: number, seenHistory: SeenVariantHistory) {
-  const selected = pickBiasedVariant(
+function selectInitialCardIndex(
+  seed: number,
+  rotationState: VariantRotationState,
+) {
+  const { variant: selected, nextKeys } = pickRotatingVariant(
     INITIAL_CARD_VARIANTS,
-    seenHistory.initial,
+    rotationState.initial,
     createRandom(seed ^ 0x27d4eb2d),
   );
+  rotationState.initial = nextKeys;
 
   return INITIAL_CARD_VARIANTS.findIndex((variant) => variant.key === selected.key);
 }
 
-function selectMiddleCards(seed: number, seenHistory: SeenVariantHistory) {
+function selectMiddleCards(seed: number, rotationState: VariantRotationState) {
   const cards: BuildCard[] = [];
   const cardCount =
     MIN_MIDDLE_CARD_COUNT +
@@ -593,7 +606,13 @@ function selectMiddleCards(seed: number, seenHistory: SeenVariantHistory) {
 
       return true;
     });
-    const selected = pickBiasedVariant(candidates, seenHistory.middle, random);
+    const { variant: selected, nextKeys } = pickRotatingVariant(
+      candidates,
+      rotationState.middle,
+      random,
+      MIDDLE_CARD_VARIANTS,
+    );
+    rotationState.middle = nextKeys;
     const selectedIndex = MIDDLE_CARD_VARIANTS.findIndex(
       (variant) => variant.key === selected.key,
     );
@@ -619,17 +638,75 @@ function selectMiddleCards(seed: number, seenHistory: SeenVariantHistory) {
   };
 }
 
-function pickBiasedVariant<T extends { key: string }>(
-  pool: T[],
-  seenKeys: string[],
+function pickRotatingVariant<T extends { key: string }>(
+  eligiblePool: T[],
+  remainingKeys: string[],
   random: () => number,
+  fullPool: T[] = eligiblePool,
 ) {
-  const unseenPool = pool.filter((variant) => !seenKeys.includes(variant.key));
-  const selectionPool = unseenPool.length > 0 ? unseenPool : pool;
+  const normalizedRemainingKeys = normalizeRotationKeys(remainingKeys, fullPool);
+  const remainingKeySet = new Set(normalizedRemainingKeys);
+  const remainingEligiblePool = eligiblePool.filter((variant) =>
+    remainingKeySet.has(variant.key),
+  );
+  const selectionPool =
+    remainingEligiblePool.length > 0 ? remainingEligiblePool : eligiblePool;
+  const variant = selectionPool[Math.floor(random() * selectionPool.length)];
 
-  return selectionPool[Math.floor(random() * selectionPool.length)];
+  return {
+    variant,
+    nextKeys: advanceRotationKeys(normalizedRemainingKeys, fullPool, variant.key),
+  };
 }
 
-function addUnique(items: string[], value: string) {
-  return items.includes(value) ? items : [...items, value];
+function cloneRotationState(state: VariantRotationState) {
+  return {
+    initial: normalizeRotationKeys(state.initial, INITIAL_CARD_VARIANTS),
+    middle: normalizeRotationKeys(state.middle, MIDDLE_CARD_VARIANTS),
+    final: normalizeRotationKeys(state.final, FINAL_CARD_VARIANTS),
+  };
+}
+
+function consumeRotationKey(
+  stage: CardStage,
+  state: VariantRotationState,
+  key: string,
+): VariantRotationState {
+  const nextKeys =
+    stage === "initial"
+      ? advanceRotationKeys(state.initial, INITIAL_CARD_VARIANTS, key)
+      : stage === "middle"
+        ? advanceRotationKeys(state.middle, MIDDLE_CARD_VARIANTS, key)
+        : advanceRotationKeys(state.final, FINAL_CARD_VARIANTS, key);
+
+  return {
+    ...state,
+    [stage]: nextKeys,
+  };
+}
+
+function normalizeRotationKeys<T extends { key: string }>(
+  keys: string[],
+  pool: T[],
+) {
+  const validKeys = new Set(pool.map((variant) => variant.key));
+  const dedupedKeys = keys.filter(
+    (key, index) => validKeys.has(key) && keys.indexOf(key) === index,
+  );
+
+  return dedupedKeys.length > 0
+    ? dedupedKeys
+    : pool.map((variant) => variant.key);
+}
+
+function advanceRotationKeys<T extends { key: string }>(
+  keys: string[],
+  pool: T[],
+  selectedKey: string,
+) {
+  const nextKeys = keys.filter((key) => key !== selectedKey);
+
+  return nextKeys.length > 0
+    ? nextKeys
+    : pool.map((variant) => variant.key);
 }

@@ -17,22 +17,22 @@ import {
 import {
   DEFAULT_IDEA,
   DEFAULT_CARD_DURATION_MS,
-  EMPTY_SEEN_VARIANT_HISTORY,
+  INITIAL_ROTATION_STATE,
+  advanceRotationState,
   createBuildSession,
   getVariantCount,
   getVariantPreview,
   isLikelyAnthropicApiKey,
-  markSeenVariants,
   type BuildCard,
   type BuildCardInteraction,
   type FinalCardInteraction,
   type BuildSession,
   type CardStage,
-  type SeenVariantHistory,
+  type VariantRotationState,
 } from "@/lib/build-nothing";
 
 const DEV_STAGES: CardStage[] = ["initial", "middle", "final"];
-const SEEN_VARIANTS_STORAGE_KEY = "lets-not-build-anything-seen-variants";
+const ROTATION_STATE_STORAGE_KEY = "lets-not-build-anything-rotation-state-v2";
 
 export function ShipNothing() {
   const [draft, setDraft] = useState("");
@@ -43,8 +43,8 @@ export function ShipNothing() {
   const [previewStage, setPreviewStage] = useState<CardStage>("initial");
   const [previewCycle, setPreviewCycle] = useState(0);
   const [resolvedActionStepIds, setResolvedActionStepIds] = useState<string[]>([]);
-  const [seenHistory, setSeenHistory] = useState<SeenVariantHistory>(
-    loadSeenVariantHistory,
+  const [rotationState, setRotationState] = useState<VariantRotationState>(
+    loadRotationState,
   );
 
   const devMode = process.env.NODE_ENV === "development";
@@ -72,10 +72,10 @@ export function ShipNothing() {
 
   useEffect(() => {
     window.localStorage.setItem(
-      SEEN_VARIANTS_STORAGE_KEY,
-      JSON.stringify(seenHistory),
+      ROTATION_STATE_STORAGE_KEY,
+      JSON.stringify(rotationState),
     );
-  }, [seenHistory]);
+  }, [rotationState]);
 
   useEffect(() => {
     if (!devMode) {
@@ -139,13 +139,13 @@ export function ShipNothing() {
       return;
     }
 
-    const nextSession = createBuildSession(activePrompt, seenHistory);
+    const nextSession = createBuildSession(activePrompt, rotationState);
 
     setActiveStepIndex(0);
     setHistoryCount(0);
     setIsComplete(false);
     setResolvedActionStepIds([]);
-    setSeenHistory((current) => markSeenVariants(current, nextSession));
+    setRotationState((current) => advanceRotationState(current, nextSession));
     setSession(nextSession);
   }
 
@@ -564,28 +564,34 @@ function getCardShellClassName() {
   return "panel-strong terminal-accent-left px-5 py-5";
 }
 
-function loadSeenVariantHistory(): SeenVariantHistory {
+function loadRotationState(): VariantRotationState {
   if (typeof window === "undefined") {
-    return EMPTY_SEEN_VARIANT_HISTORY;
+    return INITIAL_ROTATION_STATE;
   }
 
-  const storedHistory = window.localStorage.getItem(SEEN_VARIANTS_STORAGE_KEY);
+  const storedState = window.localStorage.getItem(ROTATION_STATE_STORAGE_KEY);
 
-  if (!storedHistory) {
-    return EMPTY_SEEN_VARIANT_HISTORY;
+  if (!storedState) {
+    return INITIAL_ROTATION_STATE;
   }
 
   try {
-    const parsed = JSON.parse(storedHistory) as Partial<SeenVariantHistory>;
+    const parsed = JSON.parse(storedState) as Partial<VariantRotationState>;
 
     return {
-      initial: Array.isArray(parsed.initial) ? parsed.initial : [],
-      middle: Array.isArray(parsed.middle) ? parsed.middle : [],
-      final: Array.isArray(parsed.final) ? parsed.final : [],
+      initial: Array.isArray(parsed.initial)
+        ? parsed.initial
+        : INITIAL_ROTATION_STATE.initial,
+      middle: Array.isArray(parsed.middle)
+        ? parsed.middle
+        : INITIAL_ROTATION_STATE.middle,
+      final: Array.isArray(parsed.final)
+        ? parsed.final
+        : INITIAL_ROTATION_STATE.final,
     };
   } catch {
-    window.localStorage.removeItem(SEEN_VARIANTS_STORAGE_KEY);
-    return EMPTY_SEEN_VARIANT_HISTORY;
+    window.localStorage.removeItem(ROTATION_STATE_STORAGE_KEY);
+    return INITIAL_ROTATION_STATE;
   }
 }
 

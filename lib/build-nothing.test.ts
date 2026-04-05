@@ -3,15 +3,15 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CARD_DURATION_MS,
   DEFAULT_IDEA,
-  EMPTY_SEEN_VARIANT_HISTORY,
   FINAL_CARD_VARIANTS,
+  INITIAL_ROTATION_STATE,
   INITIAL_CARD_VARIANTS,
   MIDDLE_CARD_VARIANTS,
+  advanceRotationState,
   createBuildSession,
   getVariantCount,
   getVariantPreview,
   isLikelyAnthropicApiKey,
-  markSeenVariants,
   normalizePrompt,
 } from "./build-nothing";
 
@@ -269,14 +269,12 @@ describe("createBuildSession", () => {
     ).toBe(true);
   });
 
-  it("biases initial selection toward unseen variants", () => {
+  it("prefers the remaining initial rotation pool before reusing variants", () => {
     const session = createBuildSession("same prompt", {
-      ...EMPTY_SEEN_VARIANT_HISTORY,
+      ...INITIAL_ROTATION_STATE,
       initial: [
-        "claude-vibecode",
-        "planning-kid",
-        "fake-captcha",
-        "wikipedia-banner",
+        "obsidian-vault",
+        "benchmark-garbage",
       ],
     });
 
@@ -286,27 +284,35 @@ describe("createBuildSession", () => {
   });
 
   it("forces the dog ending when the dog card is selected last", () => {
-    const seenMiddle = MIDDLE_CARD_VARIANTS.map((variant) => variant.key).filter(
-      (key) => key !== "watch-dog",
-    );
     const session = createBuildSession("watch my dog", {
-      ...EMPTY_SEEN_VARIANT_HISTORY,
-      middle: seenMiddle,
+      ...INITIAL_ROTATION_STATE,
+      middle: ["watch-dog"],
     });
 
     expect(session.middleCards.at(-1)?.variantKey).toBe("watch-dog");
     expect(session.finalCard.variantKey).toBe("dog-accident");
   });
 
-  it("tracks seen variants after a generated run", () => {
+  it("advances the rotation state after a generated run", () => {
     const session = createBuildSession("tracking run");
-    const seen = markSeenVariants(EMPTY_SEEN_VARIANT_HISTORY, session);
+    const nextRotationState = advanceRotationState(INITIAL_ROTATION_STATE, session);
 
-    expect(seen.initial).toContain(session.initialCard.variantKey);
-    expect(seen.middle).toEqual(
-      expect.arrayContaining(session.middleCards.map((card) => card.variantKey)),
-    );
-    expect(seen.final).toContain(session.finalCard.variantKey);
+    expect(nextRotationState.initial).not.toContain(session.initialCard.variantKey);
+    for (const card of session.middleCards) {
+      expect(nextRotationState.middle).not.toContain(card.variantKey);
+    }
+    expect(nextRotationState.final).not.toContain(session.finalCard.variantKey);
+  });
+
+  it("keeps filling middle cards even when the remaining pool depletes mid-run", () => {
+    const session = createBuildSession("mid-run pool reset", {
+      ...INITIAL_ROTATION_STATE,
+      middle: ["watch-dog"],
+    });
+
+    expect(session.middleCards.length).toBeGreaterThanOrEqual(3);
+    expect(session.middleCards.length).toBeLessThanOrEqual(5);
+    expect(session.middleCards.at(-1)?.variantKey).toBe("watch-dog");
   });
 
   it("does not echo the raw prompt in generated copy", () => {
