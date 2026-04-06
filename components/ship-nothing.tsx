@@ -17,8 +17,11 @@ import {
   BuildCardView,
   FinalCardView,
   getCardShellClassName,
-  getCardShellStyle,
 } from "@/components/ship-nothing/views";
+import {
+  getCardShellStyle,
+  getDisplayedCardShellStyle,
+} from "@/components/ship-nothing/shell-style";
 import {
   DEFAULT_IDEA,
   DEFAULT_CARD_DURATION_MS,
@@ -347,10 +350,14 @@ export function ShipNothing() {
                   ))}
 
                   <div className="min-h-[214px]">
-                    <div
-                      className={`${getCardShellClassName()} relative`}
-                      style={getCardShellStyle(activeStep?.interaction?.type)}
-                    >
+                      <div
+                        className={`${getCardShellClassName()} relative`}
+                        style={getDisplayedCardShellStyle(
+                          activeStep?.interaction?.type,
+                          session.finalCard.interaction?.type,
+                          isComplete,
+                        )}
+                      >
                       <AnimatePresence mode="wait">
                         {isComplete ? (
                           <motion.div
